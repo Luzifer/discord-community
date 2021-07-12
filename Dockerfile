@@ -11,11 +11,14 @@ RUN set -ex \
 
 FROM alpine:latest
 
+ENV TZ=Europe/Berlin
+
 LABEL maintainer "Knut Ahlers <knut@ahlers.me>"
 
 RUN set -ex \
  && apk --no-cache add \
-      ca-certificates
+      ca-certificates \
+      tzdata
 
 COPY --from=builder /go/bin/tezrian-discord /usr/local/bin/tezrian-discord
 
