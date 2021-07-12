@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Luzifer/go_helpers/v2/backoff"
@@ -17,6 +20,7 @@ const (
 	twitchAPIRequestLimit   = 5
 	twitchAPIRequestTimeout = 2 * time.Second
 	streamScheduleEntries   = 5
+	streamSchedulePastTime  = 4 * time.Hour
 )
 
 type twitchStreamScheduleResponse struct {
@@ -47,7 +51,7 @@ type twitchStreamScheduleResponse struct {
 }
 
 func init() {
-	if _, err := crontab.AddFunc("*/5 * * * *", cronUpdateSchedule); err != nil {
+	if _, err := crontab.AddFunc("*/10 * * * *", cronUpdateSchedule); err != nil {
 		log.WithError(err).Fatal("Unable to add cronUpdatePresence function")
 	}
 }
@@ -58,7 +62,14 @@ func cronUpdateSchedule() {
 		ctx, cancel := context.WithTimeout(context.Background(), twitchAPIRequestTimeout)
 		defer cancel()
 
-		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://api.twitch.tv/helix/schedule?broadcaster_id=%s&first=%d", twitchChannelID, streamScheduleEntries), nil)
+		u, _ := url.Parse("https://api.twitch.tv/helix/schedule")
+		params := make(url.Values)
+		params.Set("broadcaster_id", twitchChannelID)
+		params.Set("first", strconv.Itoa(streamScheduleEntries))
+		params.Set("start_time", time.Now().Add(-streamSchedulePastTime).Format(time.RFC3339))
+		u.RawQuery = params.Encode()
+
+		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 		req.Header.Set("Authorization", "Bearer "+twitchToken)
 		req.Header.Set("Client-Id", twitchClientID)
 
@@ -79,8 +90,6 @@ func cronUpdateSchedule() {
 
 	msgEmbed := &discordgo.MessageEmbed{
 		Color:       3066993,
-		Type:        discordgo.EmbedTypeRich,
-		Title:       "Fortlaufender Streamplan",
 		Description: "Streams sind bis ca. 23 Uhr / Mitternacht, geplant aber man weiss ja wie das mit Plänen und Theorien so funktioniert…",
 		Fields:      []*discordgo.MessageEmbedField{},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
@@ -88,6 +97,9 @@ func cronUpdateSchedule() {
 			Width:  600,
 			Height: 599,
 		},
+		Timestamp: time.Now().Format(time.RFC3339),
+		Title:     "Fortlaufender Streamplan",
+		Type:      discordgo.EmbedTypeRich,
 	}
 
 	for _, seg := range data.Data.Segments {
@@ -96,8 +108,12 @@ func cronUpdateSchedule() {
 			title = fmt.Sprintf("%s (%s)", seg.Title, seg.Category.Name)
 		}
 
+		if seg.StartTime == nil {
+			continue
+		}
+
 		msgEmbed.Fields = append(msgEmbed.Fields, &discordgo.MessageEmbedField{
-			Name:   seg.StartTime.Format("Mon 02.01. 15:04 Uhr"),
+			Name:   formatGermanShort(*seg.StartTime),
 			Value:  title,
 			Inline: false,
 		})
@@ -109,17 +125,24 @@ func cronUpdateSchedule() {
 		return
 	}
 
-	var msgID string
+	var managedMsg *discordgo.Message
 	for _, msg := range msgs {
 		if len(msg.Embeds) == 0 || msg.Embeds[0].Title != msgEmbed.Title {
 			continue
 		}
 
-		msgID = msg.ID
+		managedMsg = msg
 	}
 
-	if msgID != "" {
-		_, err = discord.ChannelMessageEditEmbed(discordAnnouncementChannel, msgID, msgEmbed)
+	if managedMsg != nil {
+		oldEmbed := managedMsg.Embeds[0]
+
+		if !embedNeedsUpdate(oldEmbed, msgEmbed) {
+			log.Debug("Stream Schedule is up-to-date")
+			return
+		}
+
+		_, err = discord.ChannelMessageEditEmbed(discordAnnouncementChannel, managedMsg.ID, msgEmbed)
 	} else {
 		_, err = discord.ChannelMessageSendEmbed(discordAnnouncementChannel, msgEmbed)
 	}
@@ -127,4 +150,63 @@ func cronUpdateSchedule() {
 		log.WithError(err).Error("Unable to announce streamplan")
 		return
 	}
+
+	log.Info("Updated Stream Schedule")
+}
+
+func formatGermanShort(t time.Time) string {
+	wd := map[time.Weekday]string{
+		time.Monday:    "Mo.",
+		time.Tuesday:   "Di.",
+		time.Wednesday: "Mi.",
+		time.Thursday:  "Do.",
+		time.Friday:    "Fr.",
+		time.Saturday:  "Sa.",
+		time.Sunday:    "So.",
+	}[t.Weekday()]
+
+	tz, err := time.LoadLocation("Europe/Berlin")
+	if err != nil {
+		log.WithError(err).Fatal("Unable to load timezone Europe/Berlin")
+	}
+
+	return strings.Join([]string{wd, t.In(tz).Format("02.01. 15:04"), "Uhr"}, " ")
+}
+
+func embedNeedsUpdate(o, n *discordgo.MessageEmbed) bool {
+	if o.Title != n.Title {
+		return true
+	}
+
+	if o.Description != n.Description {
+		return true
+	}
+
+	if o.Thumbnail != nil && n.Thumbnail == nil || o.Thumbnail == nil && n.Thumbnail != nil {
+		return true
+	}
+
+	if o.Thumbnail != nil && o.Thumbnail.URL != n.Thumbnail.URL {
+		return true
+	}
+
+	if len(o.Fields) != len(n.Fields) {
+		return true
+	}
+
+	for i := range o.Fields {
+		if o.Fields[i].Name != n.Fields[i].Name {
+			return true
+		}
+
+		if o.Fields[i].Value != n.Fields[i].Value {
+			return true
+		}
+
+		if o.Fields[i].Inline != n.Fields[i].Inline {
+			return true
+		}
+	}
+
+	return false
 }
