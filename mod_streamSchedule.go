@@ -20,7 +20,7 @@ const (
 	twitchAPIRequestLimit   = 5
 	twitchAPIRequestTimeout = 2 * time.Second
 	streamScheduleEntries   = 5
-	streamSchedulePastTime  = 4 * time.Hour
+	streamSchedulePastTime  = 15 * time.Minute
 )
 
 type twitchStreamScheduleResponse struct {
