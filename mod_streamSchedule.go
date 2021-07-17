@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -65,7 +64,6 @@ func cronUpdateSchedule() {
 		u, _ := url.Parse("https://api.twitch.tv/helix/schedule")
 		params := make(url.Values)
 		params.Set("broadcaster_id", twitchChannelID)
-		params.Set("first", strconv.Itoa(streamScheduleEntries))
 		params.Set("start_time", time.Now().Add(-streamSchedulePastTime).Format(time.RFC3339))
 		u.RawQuery = params.Encode()
 
@@ -117,6 +115,10 @@ func cronUpdateSchedule() {
 			Value:  title,
 			Inline: false,
 		})
+
+		if len(msgEmbed.Fields) == streamScheduleEntries {
+			break
+		}
 	}
 
 	msgs, err := discord.ChannelMessages(discordAnnouncementChannel, 100, "", "", "")
