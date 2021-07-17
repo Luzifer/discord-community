@@ -108,7 +108,7 @@ func cronUpdateSchedule() {
 			title = fmt.Sprintf("%s (%s)", seg.Title, seg.Category.Name)
 		}
 
-		if seg.StartTime == nil {
+		if seg.StartTime == nil || seg.CanceledUntil != nil {
 			continue
 		}
 
