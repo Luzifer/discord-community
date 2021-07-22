@@ -1,7 +1,7 @@
 FROM golang:alpine as builder
 
-COPY . /go/src/github.com/Luzifer/tezrian-discord
-WORKDIR /go/src/github.com/Luzifer/tezrian-discord
+COPY . /go/src/github.com/Luzifer/discord-community
+WORKDIR /go/src/github.com/Luzifer/discord-community
 
 RUN set -ex \
  && apk add --update git \
@@ -20,11 +20,11 @@ RUN set -ex \
       ca-certificates \
       tzdata
 
-COPY --from=builder /go/bin/tezrian-discord /usr/local/bin/tezrian-discord
+COPY --from=builder /go/bin/discord-community /usr/local/bin/discord-community
 
 EXPOSE 3000
 
-ENTRYPOINT ["/usr/local/bin/tezrian-discord"]
+ENTRYPOINT ["/usr/local/bin/discord-community"]
 CMD ["--"]
 
 # vim: set ft=Dockerfile:
