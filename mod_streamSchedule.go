@@ -12,6 +12,7 @@ import (
 	"github.com/Luzifer/go_helpers/v2/backoff"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,40 +23,56 @@ const (
 	streamSchedulePastTime  = 15 * time.Minute
 )
 
-type twitchStreamScheduleResponse struct {
-	Data struct {
-		Segments []struct {
-			ID            string     `json:"id"`
-			StartTime     *time.Time `json:"start_time"`
-			EndTime       *time.Time `json:"end_time"`
-			Title         string     `json:"title"`
-			CanceledUntil *time.Time `json:"canceled_until"`
-			Category      *struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"category"`
-			IsRecurring bool `json:"is_recurring"`
-		} `json:"segments"`
-		BroadcasterID    string `json:"broadcaster_id"`
-		BroadcasterName  string `json:"broadcaster_name"`
-		BroadcasterLogin string `json:"broadcaster_login"`
-		Vacation         *struct {
-			StartTime *time.Time `json:"start_time"`
-			EndTime   *time.Time `json:"end_time"`
-		} `json:"vacation"`
-	} `json:"data"`
-	Pagination struct {
-		Cursor string `json:"cursor"`
-	} `json:"pagination"`
+func init() {
+	RegisterModule("schedule", func() module { return &modStreamSchedule{} })
 }
 
-func init() {
-	if _, err := crontab.AddFunc("*/10 * * * *", cronUpdateSchedule); err != nil {
+type (
+	modStreamSchedule struct {
+		attrs   moduleAttributeStore
+		discord *discordgo.Session
+	}
+
+	twitchStreamScheduleResponse struct {
+		Data struct {
+			Segments []struct {
+				ID            string     `json:"id"`
+				StartTime     *time.Time `json:"start_time"`
+				EndTime       *time.Time `json:"end_time"`
+				Title         string     `json:"title"`
+				CanceledUntil *time.Time `json:"canceled_until"`
+				Category      *struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"category"`
+				IsRecurring bool `json:"is_recurring"`
+			} `json:"segments"`
+			BroadcasterID    string `json:"broadcaster_id"`
+			BroadcasterName  string `json:"broadcaster_name"`
+			BroadcasterLogin string `json:"broadcaster_login"`
+			Vacation         *struct {
+				StartTime *time.Time `json:"start_time"`
+				EndTime   *time.Time `json:"end_time"`
+			} `json:"vacation"`
+		} `json:"data"`
+		Pagination struct {
+			Cursor string `json:"cursor"`
+		} `json:"pagination"`
+	}
+)
+
+func (m *modStreamSchedule) Initialize(crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
+	m.attrs = attrs
+	m.discord = discord
+
+	if _, err := crontab.AddFunc(attrs.MustString("cron", ptrString("*/10 * * * *")), m.cronUpdateSchedule); err != nil {
 		log.WithError(err).Fatal("Unable to add cronUpdatePresence function")
 	}
+
+	return nil
 }
 
-func cronUpdateSchedule() {
+func (m modStreamSchedule) cronUpdateSchedule() {
 	var data twitchStreamScheduleResponse
 	if err := backoff.NewBackoff().WithMaxIterations(twitchAPIRequestLimit).Retry(func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), twitchAPIRequestTimeout)
@@ -111,7 +128,7 @@ func cronUpdateSchedule() {
 		}
 
 		msgEmbed.Fields = append(msgEmbed.Fields, &discordgo.MessageEmbedField{
-			Name:   formatGermanShort(*seg.StartTime),
+			Name:   m.formatGermanShort(*seg.StartTime),
 			Value:  title,
 			Inline: false,
 		})
@@ -121,7 +138,7 @@ func cronUpdateSchedule() {
 		}
 	}
 
-	msgs, err := discord.ChannelMessages(discordAnnouncementChannel, 100, "", "", "")
+	msgs, err := m.discord.ChannelMessages(discordAnnouncementChannel, 100, "", "", "")
 	if err != nil {
 		log.WithError(err).Error("Unable to fetch announcement channel messages")
 		return
@@ -139,14 +156,14 @@ func cronUpdateSchedule() {
 	if managedMsg != nil {
 		oldEmbed := managedMsg.Embeds[0]
 
-		if !embedNeedsUpdate(oldEmbed, msgEmbed) {
+		if !m.embedNeedsUpdate(oldEmbed, msgEmbed) {
 			log.Debug("Stream Schedule is up-to-date")
 			return
 		}
 
-		_, err = discord.ChannelMessageEditEmbed(discordAnnouncementChannel, managedMsg.ID, msgEmbed)
+		_, err = m.discord.ChannelMessageEditEmbed(discordAnnouncementChannel, managedMsg.ID, msgEmbed)
 	} else {
-		_, err = discord.ChannelMessageSendEmbed(discordAnnouncementChannel, msgEmbed)
+		_, err = m.discord.ChannelMessageSendEmbed(discordAnnouncementChannel, msgEmbed)
 	}
 	if err != nil {
 		log.WithError(err).Error("Unable to announce streamplan")
@@ -156,7 +173,7 @@ func cronUpdateSchedule() {
 	log.Info("Updated Stream Schedule")
 }
 
-func formatGermanShort(t time.Time) string {
+func (m modStreamSchedule) formatGermanShort(t time.Time) string {
 	wd := map[time.Weekday]string{
 		time.Monday:    "Mo.",
 		time.Tuesday:   "Di.",
@@ -175,7 +192,7 @@ func formatGermanShort(t time.Time) string {
 	return strings.Join([]string{wd, t.In(tz).Format("02.01. 15:04"), "Uhr"}, " ")
 }
 
-func embedNeedsUpdate(o, n *discordgo.MessageEmbed) bool {
+func (m modStreamSchedule) embedNeedsUpdate(o, n *discordgo.MessageEmbed) bool {
 	if o.Title != n.Title {
 		return true
 	}

@@ -16,17 +16,13 @@ import (
 
 var (
 	cfg = struct {
-		BotToken       string `flag:"bot-token" description:"Token from the App Bot User section"`
-		GuildID        string `flag:"guild-id" description:"ID of the Discord server (guild)"`
+		Config         string `flag:"config,c" default:"config.yaml" description:"Path to config file"`
 		Listen         string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
 		LogLevel       string `flag:"log-level" default:"info" description:"Log level (debug, info, warn, error, fatal)"`
 		VersionAndExit bool   `flag:"version" default:"false" description:"Prints current version and exits"`
 	}{}
 
-	crontab = cron.New()
-	discord *discordgo.Session
-
-	discordHandlers []interface{}
+	config *configFile
 
 	version = "dev"
 )
@@ -38,7 +34,7 @@ func init() {
 	}
 
 	if cfg.VersionAndExit {
-		fmt.Printf("tezrian-discord %s\n", version)
+		fmt.Printf("discord-community %s\n", version)
 		os.Exit(0)
 	}
 
@@ -50,17 +46,33 @@ func init() {
 }
 
 func main() {
-	var err error
+	var (
+		crontab = cron.New()
+		discord *discordgo.Session
+		err     error
+	)
+
+	if config, err = newConfigFromFile(cfg.Config); err != nil {
+		log.WithError(err).Fatal("Unable to load config file")
+	}
 
 	// Connect to Discord
-	if discord, err = discordgo.New(strings.Join([]string{"Bot", cfg.BotToken}, " ")); err != nil {
+	if discord, err = discordgo.New(strings.Join([]string{"Bot", config.BotToken}, " ")); err != nil {
 		log.WithError(err).Fatal("Unable to create discord client")
 	}
 
 	discord.Identify.Intents = discordgo.IntentsAll
 
-	for _, hdl := range discordHandlers {
-		discord.AddHandler(hdl)
+	for _, mc := range config.ModuleConfigs {
+		logger := log.WithField("module", mc.Type)
+		mod := GetModuleByName(mc.Type)
+		if mod == nil {
+			logger.Fatal("Found configuration for unsupported module")
+		}
+
+		if err = mod.Initialize(crontab, discord, mc.Attributes); err != nil {
+			logger.WithError(err).Fatal("Unable to initialize module")
+		}
 	}
 
 	if err = discord.Open(); err != nil {
