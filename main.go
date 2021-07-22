@@ -63,6 +63,7 @@ func main() {
 
 	discord.Identify.Intents = discordgo.IntentsAll
 
+	var enabledModules int
 	for _, mc := range config.ModuleConfigs {
 		logger := log.WithField("module", mc.Type)
 		mod := GetModuleByName(mc.Type)
@@ -73,6 +74,14 @@ func main() {
 		if err = mod.Initialize(crontab, discord, mc.Attributes); err != nil {
 			logger.WithError(err).Fatal("Unable to initialize module")
 		}
+
+		enabledModules++
+		logger.Debug("Enabled module")
+	}
+
+	if enabledModules == 0 {
+		log.Warn("No modules were enabled, quitting now")
+		return
 	}
 
 	if err = discord.Open(); err != nil {
