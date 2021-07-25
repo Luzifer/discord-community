@@ -1,9 +1,7 @@
-# Discord-Community
-
-## Modules
+# Modules
 
 {% for module in modules -%}
-### {{ module.type }}
+## {{ module.type }}
 
 {{ module.description }}
 

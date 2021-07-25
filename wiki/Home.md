@@ -1,8 +1,6 @@
-# Discord-Community
+# Modules
 
-## Modules
-
-### schedule
+## schedule
 
 Posts stream schedule derived from Twitch schedule as embed in Discord channel
 
