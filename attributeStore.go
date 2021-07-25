@@ -1,8 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"strings"
+	"time"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -11,6 +14,33 @@ var (
 )
 
 type moduleAttributeStore map[string]interface{}
+
+func (m moduleAttributeStore) Expect(keys ...string) error {
+	var missing []string
+
+	for _, k := range keys {
+		if _, ok := m[k]; !ok {
+			missing = append(missing, k)
+		}
+	}
+
+	if len(missing) > 0 {
+		return errors.Errorf("missing key(s) %s", strings.Join(missing, ", "))
+	}
+
+	return nil
+}
+
+func (m moduleAttributeStore) MustDuration(name string, defVal *time.Duration) time.Duration {
+	v, err := m.Duration(name)
+	if err != nil {
+		if defVal != nil {
+			return *defVal
+		}
+		panic(err)
+	}
+	return v
+}
 
 func (m moduleAttributeStore) MustInt64(name string, defVal *int64) int64 {
 	v, err := m.Int64(name)
@@ -32,6 +62,16 @@ func (m moduleAttributeStore) MustString(name string, defVal *string) string {
 		panic(err)
 	}
 	return v
+}
+
+func (m moduleAttributeStore) Duration(name string) (time.Duration, error) {
+	v, err := m.String(name)
+	if err != nil {
+		return 0, errors.Wrap(err, "getting string value")
+	}
+
+	d, err := time.ParseDuration(v)
+	return d, errors.Wrap(err, "parsing value")
 }
 
 func (m moduleAttributeStore) Int64(name string) (int64, error) {
