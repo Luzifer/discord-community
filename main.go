@@ -64,8 +64,11 @@ func main() {
 	discord.Identify.Intents = discordgo.IntentsAll
 
 	var enabledModules int
-	for _, mc := range config.ModuleConfigs {
-		logger := log.WithField("module", mc.Type)
+	for i, mc := range config.ModuleConfigs {
+		logger := log.WithFields(log.Fields{
+			"idx":    i,
+			"module": mc.Type,
+		})
 		mod := GetModuleByName(mc.Type)
 		if mod == nil {
 			logger.Fatal("Found configuration for unsupported module")
