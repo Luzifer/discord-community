@@ -16,11 +16,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+/*
+ * @module schedule
+ * @module_desc Posts stream schedule derived from Twitch schedule as embed in Discord channel
+ */
+
 const (
 	twitchAPIRequestLimit   = 5
 	twitchAPIRequestTimeout = 2 * time.Second
-	streamScheduleEntries   = 5
-	streamSchedulePastTime  = 15 * time.Minute
+)
+
+var (
+	defaultStreamScheduleEntries  = ptrInt64(5)
+	defaultStreamSchedulePastTime = ptrDuration(15 * time.Minute)
 )
 
 func init() {
@@ -65,8 +73,19 @@ func (m *modStreamSchedule) Initialize(crontab *cron.Cron, discord *discordgo.Se
 	m.attrs = attrs
 	m.discord = discord
 
+	if err := attrs.Expect(
+		"discord_channel_id",
+		"embed_title",
+		"twitch_channel_id",
+		"twitch_client_id",
+		"twitch_token",
+	); err != nil {
+		return errors.Wrap(err, "validating attributes")
+	}
+
+	// @attr cron optional string "*/10 * * * *" When to execute the schedule transfer
 	if _, err := crontab.AddFunc(attrs.MustString("cron", ptrString("*/10 * * * *")), m.cronUpdateSchedule); err != nil {
-		log.WithError(err).Fatal("Unable to add cronUpdatePresence function")
+		return errors.Wrap(err, "adding cron function")
 	}
 
 	return nil
@@ -80,13 +99,17 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 
 		u, _ := url.Parse("https://api.twitch.tv/helix/schedule")
 		params := make(url.Values)
-		params.Set("broadcaster_id", twitchChannelID)
-		params.Set("start_time", time.Now().Add(-streamSchedulePastTime).Format(time.RFC3339))
+		// @attr twitch_channel_id required string "" ID (not name) of the channel to fetch the schedule from
+		params.Set("broadcaster_id", m.attrs.MustString("twitch_channel_id", nil))
+		// @attr schedule_past_time optional duration "15m" How long in the past should the schedule contain an entry
+		params.Set("start_time", time.Now().Add(-m.attrs.MustDuration("schedule_past_time", defaultStreamSchedulePastTime)).Format(time.RFC3339))
 		u.RawQuery = params.Encode()
 
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-		req.Header.Set("Authorization", "Bearer "+twitchToken)
-		req.Header.Set("Client-Id", twitchClientID)
+		// @attr twitch_token required string "" Token for the user the `twitch_channel_id` belongs to
+		req.Header.Set("Authorization", "Bearer "+m.attrs.MustString("twitch_token", nil))
+		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
+		req.Header.Set("Client-Id", m.attrs.MustString("twitch_client_id", nil))
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -104,17 +127,23 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 	}
 
 	msgEmbed := &discordgo.MessageEmbed{
-		Color:       3066993,
-		Description: "Streams sind bis ca. 23 Uhr / Mitternacht, geplant aber man weiss ja wie das mit Plänen und Theorien so funktioniert…",
+		// @attr embed_color optional int64 "3066993" Integer representation of the hex color for the embed (default is #2ECC71)
+		Color: int(m.attrs.MustInt64("embed_color", ptrInt64(3066993))),
+		// @attr embed_description optional string "" Description for the embed block
+		Description: m.attrs.MustString("embed_description", ptrStringEmpty),
 		Fields:      []*discordgo.MessageEmbedField{},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL:    "https://p.hub.luzifer.io/http://www.clker.com/cliparts/c/f/5/7/1194984495549320725tabella_architetto_franc_01.svg.hi.png",
-			Width:  600,
-			Height: 599,
+			// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
+			URL: m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty),
+			// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
+			Width: int(m.attrs.MustInt64("embed_thumbnail_width", ptrInt64Zero)),
+			// @attr embed_thumbnail_height optional int64 "" Height of the thumbnail
+			Height: int(m.attrs.MustInt64("embed_thumbnail_height", ptrInt64Zero)),
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
-		Title:     "Fortlaufender Streamplan",
-		Type:      discordgo.EmbedTypeRich,
+		// @attr embed_title required string "" Title of the embed (used to find the managed post, must be unique for that channel)
+		Title: m.attrs.MustString("embed_title", nil),
+		Type:  discordgo.EmbedTypeRich,
 	}
 
 	for _, seg := range data.Data.Segments {
@@ -133,12 +162,14 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 			Inline: false,
 		})
 
-		if len(msgEmbed.Fields) == streamScheduleEntries {
+		// @attr schedule_entries optional int64 "5" How many schedule entries to add to the embed as fields
+		if len(msgEmbed.Fields) == int(m.attrs.MustInt64("schedule_entries", defaultStreamScheduleEntries)) {
 			break
 		}
 	}
 
-	msgs, err := m.discord.ChannelMessages(discordAnnouncementChannel, 100, "", "", "")
+	// @attr discord_channel_id required string "" ID of the Discord channel to post the message to
+	msgs, err := m.discord.ChannelMessages(m.attrs.MustString("discord_channel_id", nil), 100, "", "", "")
 	if err != nil {
 		log.WithError(err).Error("Unable to fetch announcement channel messages")
 		return
@@ -161,9 +192,9 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 			return
 		}
 
-		_, err = m.discord.ChannelMessageEditEmbed(discordAnnouncementChannel, managedMsg.ID, msgEmbed)
+		_, err = m.discord.ChannelMessageEditEmbed(m.attrs.MustString("discord_channel_id", nil), managedMsg.ID, msgEmbed)
 	} else {
-		_, err = m.discord.ChannelMessageSendEmbed(discordAnnouncementChannel, msgEmbed)
+		_, err = m.discord.ChannelMessageSendEmbed(m.attrs.MustString("discord_channel_id", nil), msgEmbed)
 	}
 	if err != nil {
 		log.WithError(err).Error("Unable to announce streamplan")
