@@ -39,7 +39,7 @@ def main(args):
 
         modules.append(mod)
 
-    with open('docs/Home.md.tpl', 'r') as f:
+    with open('wiki/Home.md.tpl', 'r') as f:
         tpl = jinja2.Template(f.read())
         print(tpl.render(modules=modules))
 

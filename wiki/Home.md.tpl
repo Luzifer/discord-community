@@ -7,8 +7,8 @@
 
 {{ module.description }}
 
-| Attribute | Required | Type | Default Value | Description |
-| --------- | -------- | ---- | ------------- | ----------- |
+| Attribute | Req. | Type | Default Value | Description |
+| --------- | :--: | ---- | ------------- | ----------- |
 {%- for attr in module.attributes %}
 | `{{ attr.name }}` | {% if attr.required == 'required' %}✅{% endif %} | {{ attr.type }} | {% if attr.default != "" %}`{{ attr.default }}`{% endif %} | {{ attr.description }} |
 {%- endfor %}

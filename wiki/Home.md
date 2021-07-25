@@ -6,8 +6,8 @@
 
 Posts stream schedule derived from Twitch schedule as embed in Discord channel
 
-| Attribute | Required | Type | Default Value | Description |
-| --------- | -------- | ---- | ------------- | ----------- |
+| Attribute | Req. | Type | Default Value | Description |
+| --------- | :--: | ---- | ------------- | ----------- |
 | `discord_channel_id` | ✅ | string |  | ID of the Discord channel to post the message to |
 | `embed_title` | ✅ | string |  | Title of the embed (used to find the managed post, must be unique for that channel) |
 | `twitch_channel_id` | ✅ | string |  | ID (not name) of the channel to fetch the schedule from |
