@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
+	"text/template"
 
+	korvike "github.com/Luzifer/korvike/functions"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
@@ -28,8 +32,23 @@ func newConfigFromFile(filename string) (*configFile, error) {
 	}
 	defer f.Close()
 
+	configContent, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading config file")
+	}
+
+	tpl, err := template.New("config").Funcs(korvike.GetFunctionMap()).Parse(string(configContent))
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing config file template")
+	}
+
+	renderedConfig := new(bytes.Buffer)
+	if err = tpl.Execute(renderedConfig, nil); err != nil {
+		return nil, errors.Wrap(err, "rendering config template")
+	}
+
 	var (
-		decoder = yaml.NewDecoder(f)
+		decoder = yaml.NewDecoder(renderedConfig)
 		tmp     configFile
 	)
 
