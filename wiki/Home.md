@@ -16,6 +16,15 @@ module_configs:
 
 # Modules
 
+## Type: `presence`
+
+Updates the presence status of the bot to display the next stream
+
+| Attribute | Req. | Type | Default Value | Description |
+| --------- | :--: | ---- | ------------- | ----------- |
+| `fallback_text` | ✅ | string |  | What to set the text to when no stream is found (`playing <text>`) |
+| `cron` |  | string | `* * * * *` | When to execute the module |
+
 ## Type: `schedule`
 
 Posts stream schedule derived from Twitch schedule as embed in Discord channel
@@ -35,6 +44,7 @@ Posts stream schedule derived from Twitch schedule as embed in Discord channel
 | `embed_thumbnail_width` |  | int64 |  | Width of the thumbnail |
 | `schedule_entries` |  | int64 | `5` | How many schedule entries to add to the embed as fields |
 | `schedule_past_time` |  | duration | `15m` | How long in the past should the schedule contain an entry |
+
 
 
 <!-- vim: set ft=markdown : -->

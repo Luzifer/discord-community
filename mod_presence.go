@@ -12,6 +12,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+/*
+ * @module presence
+ * @module_desc Updates the presence status of the bot to display the next stream
+ */
+
 func init() {
 	RegisterModule("presence", func() module { return &modPresence{} })
 }
@@ -25,6 +30,13 @@ func (m *modPresence) Initialize(crontab *cron.Cron, discord *discordgo.Session,
 	m.attrs = attrs
 	m.discord = discord
 
+	if err := attrs.Expect(
+		"fallback_text",
+	); err != nil {
+		return errors.Wrap(err, "validating attributes")
+	}
+
+	// @attr cron optional string "* * * * *" When to execute the module
 	if _, err := crontab.AddFunc(attrs.MustString("cron", ptrString("* * * * *")), m.cronUpdatePresence); err != nil {
 		return errors.Wrap(err, "adding cron function")
 	}
@@ -37,7 +49,8 @@ func (m modPresence) cronUpdatePresence() {
 
 	// FIXME: Get next stream status
 
-	status := "mit Seelen"
+	// @attr fallback_text required string "" What to set the text to when no stream is found (`playing <text>`)
+	status := m.attrs.MustString("fallback_text", nil)
 	if nextStream != nil {
 		status = fmt.Sprintf("in: %s", m.durationToHumanReadable(time.Since(*nextStream)))
 	}

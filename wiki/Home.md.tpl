@@ -26,6 +26,7 @@ module_configs:
 {%- for attr in module.attributes %}
 | `{{ attr.name }}` | {% if attr.required == 'required' %}✅{% endif %} | {{ attr.type }} | {% if attr.default != "" %}`{{ attr.default }}`{% endif %} | {{ attr.description }} |
 {%- endfor %}
+
 {% endfor %}
 
 <!-- vim: set ft=markdown : -->
