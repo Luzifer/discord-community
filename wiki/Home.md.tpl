@@ -1,7 +1,23 @@
+# Config format
+
+```yaml
+---
+
+bot_token: '...'
+guild_id: '...'
+
+module_configs:
+  - type: module-type
+    attributes:
+      key: value
+
+...
+```
+
 # Modules
 
 {% for module in modules -%}
-## {{ module.type }}
+## Type: `{{ module.type }}`
 
 {{ module.description }}
 

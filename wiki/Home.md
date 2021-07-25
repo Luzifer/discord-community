@@ -1,6 +1,22 @@
+# Config format
+
+```yaml
+---
+
+bot_token: '...'
+guild_id: '...'
+
+module_configs:
+  - type: module-type
+    attributes:
+      key: value
+
+...
+```
+
 # Modules
 
-## schedule
+## Type: `schedule`
 
 Posts stream schedule derived from Twitch schedule as embed in Discord channel
 
