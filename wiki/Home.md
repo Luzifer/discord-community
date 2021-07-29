@@ -23,7 +23,11 @@ Updates the presence status of the bot to display the next stream
 | Attribute | Req. | Type | Default Value | Description |
 | --------- | :--: | ---- | ------------- | ----------- |
 | `fallback_text` | ✅ | string |  | What to set the text to when no stream is found (`playing <text>`) |
+| `twitch_channel_id` | ✅ | string |  | ID (not name) of the channel to fetch the schedule from |
+| `twitch_client_id` | ✅ | string |  | Twitch client ID the token was issued for |
+| `twitch_token` | ✅ | string |  | Token for the user the `twitch_channel_id` belongs to |
 | `cron` |  | string | `* * * * *` | When to execute the module |
+| `schedule_past_time` |  | duration | `15m` | How long in the past should the schedule contain an entry |
 
 ## Type: `schedule`
 
