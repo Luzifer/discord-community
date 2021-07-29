@@ -10,3 +10,4 @@ var (
 func ptrDuration(v time.Duration) *time.Duration { return &v }
 func ptrInt64(v int64) *int64                    { return &v }
 func ptrString(v string) *string                 { return &v }
+func ptrTime(v time.Time) *time.Time             { return &v }

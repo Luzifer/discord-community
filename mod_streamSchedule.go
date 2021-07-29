@@ -2,14 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
-	"github.com/Luzifer/go_helpers/v2/backoff"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
@@ -21,11 +17,6 @@ import (
  * @module_desc Posts stream schedule derived from Twitch schedule as embed in Discord channel
  */
 
-const (
-	twitchAPIRequestLimit   = 5
-	twitchAPIRequestTimeout = 2 * time.Second
-)
-
 var (
 	defaultStreamScheduleEntries  = ptrInt64(5)
 	defaultStreamSchedulePastTime = ptrDuration(15 * time.Minute)
@@ -35,39 +26,10 @@ func init() {
 	RegisterModule("schedule", func() module { return &modStreamSchedule{} })
 }
 
-type (
-	modStreamSchedule struct {
-		attrs   moduleAttributeStore
-		discord *discordgo.Session
-	}
-
-	twitchStreamScheduleResponse struct {
-		Data struct {
-			Segments []struct {
-				ID            string     `json:"id"`
-				StartTime     *time.Time `json:"start_time"`
-				EndTime       *time.Time `json:"end_time"`
-				Title         string     `json:"title"`
-				CanceledUntil *time.Time `json:"canceled_until"`
-				Category      *struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-				} `json:"category"`
-				IsRecurring bool `json:"is_recurring"`
-			} `json:"segments"`
-			BroadcasterID    string `json:"broadcaster_id"`
-			BroadcasterName  string `json:"broadcaster_name"`
-			BroadcasterLogin string `json:"broadcaster_login"`
-			Vacation         *struct {
-				StartTime *time.Time `json:"start_time"`
-				EndTime   *time.Time `json:"end_time"`
-			} `json:"vacation"`
-		} `json:"data"`
-		Pagination struct {
-			Cursor string `json:"cursor"`
-		} `json:"pagination"`
-	}
-)
+type modStreamSchedule struct {
+	attrs   moduleAttributeStore
+	discord *discordgo.Session
+}
 
 func (m *modStreamSchedule) Initialize(crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
 	m.attrs = attrs
@@ -92,36 +54,21 @@ func (m *modStreamSchedule) Initialize(crontab *cron.Cron, discord *discordgo.Se
 }
 
 func (m modStreamSchedule) cronUpdateSchedule() {
-	var data twitchStreamScheduleResponse
-	if err := backoff.NewBackoff().WithMaxIterations(twitchAPIRequestLimit).Retry(func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), twitchAPIRequestTimeout)
-		defer cancel()
-
-		u, _ := url.Parse("https://api.twitch.tv/helix/schedule")
-		params := make(url.Values)
-		// @attr twitch_channel_id required string "" ID (not name) of the channel to fetch the schedule from
-		params.Set("broadcaster_id", m.attrs.MustString("twitch_channel_id", nil))
-		// @attr schedule_past_time optional duration "15m" How long in the past should the schedule contain an entry
-		params.Set("start_time", time.Now().Add(-m.attrs.MustDuration("schedule_past_time", defaultStreamSchedulePastTime)).Format(time.RFC3339))
-		u.RawQuery = params.Encode()
-
-		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-		// @attr twitch_token required string "" Token for the user the `twitch_channel_id` belongs to
-		req.Header.Set("Authorization", "Bearer "+m.attrs.MustString("twitch_token", nil))
+	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
-		req.Header.Set("Client-Id", m.attrs.MustString("twitch_client_id", nil))
+		m.attrs.MustString("twitch_client_id", nil),
+		// @attr twitch_token required string "" Token for the user the `twitch_channel_id` belongs to
+		m.attrs.MustString("twitch_token", nil),
+	)
 
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return errors.Wrap(err, "fetching schedule")
-		}
-		defer resp.Body.Close()
-
-		return errors.Wrap(
-			json.NewDecoder(resp.Body).Decode(&data),
-			"decoding schedule response",
-		)
-	}); err != nil {
+	data, err := twitch.GetChannelStreamSchedule(
+		context.Background(),
+		// @attr twitch_channel_id required string "" ID (not name) of the channel to fetch the schedule from
+		m.attrs.MustString("twitch_channel_id", nil),
+		// @attr schedule_past_time optional duration "15m" How long in the past should the schedule contain an entry
+		ptrTime(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", defaultStreamSchedulePastTime))),
+	)
+	if err != nil {
 		log.WithError(err).Error("Unable to fetch stream schedule")
 		return
 	}
