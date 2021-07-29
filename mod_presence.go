@@ -54,6 +54,7 @@ func (m modPresence) cronUpdatePresence() {
 	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
 		m.attrs.MustString("twitch_client_id", nil),
+		"", // No client secret used
 		// @attr twitch_token required string "" Token for the user the `twitch_channel_id` belongs to
 		m.attrs.MustString("twitch_token", nil),
 	)
