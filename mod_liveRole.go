@@ -111,7 +111,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		return
 	}
 
-	if u.Host != "twitch.tv" {
+	if u.Host != "www.twitch.tv" {
 		logger.WithError(err).WithField("url", activity.URL).Warning("Activity is not on Twitch")
 		exitFunc = m.removeLiveStreamerRole
 		return

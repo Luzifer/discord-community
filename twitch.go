@@ -129,8 +129,8 @@ func (t twitchAdapter) getAppAccessToken(ctx context.Context) (string, error) {
 	}
 
 	params := make(url.Values)
-	params.Set("client_id", "<your client ID>")
-	params.Set("client_secret", "<your client secret>")
+	params.Set("client_id", t.clientID)
+	params.Set("client_secret", t.clientSecret)
 	params.Set("grant_type", "client_credentials")
 
 	u, _ := url.Parse("https://id.twitch.tv/oauth2/token")
