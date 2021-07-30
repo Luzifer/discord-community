@@ -46,6 +46,9 @@ func (m *modLiveRole) Initialize(crontab *cron.Cron, discord *discordgo.Session,
 func (m modLiveRole) addLiveStreamerRole(guildID, userID string, presentRoles []string) error {
 	// @attr role_streamers_live required string "" Role ID to assign to live streamers
 	roleID := m.attrs.MustString("role_streamers_live", nil)
+	if roleID == "" {
+		return errors.New("empty live-role-id")
+	}
 	if str.StringInSlice(roleID, presentRoles) {
 		// Already there fine!
 		return nil
@@ -139,6 +142,9 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 
 func (m modLiveRole) removeLiveStreamerRole(guildID, userID string, presentRoles []string) error {
 	roleID := m.attrs.MustString("role_streamers_live", nil)
+	if roleID == "" {
+		return errors.New("empty live-role-id")
+	}
 	if !str.StringInSlice(roleID, presentRoles) {
 		// Not there: fine!
 		return nil

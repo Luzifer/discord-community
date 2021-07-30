@@ -110,3 +110,30 @@ func (m moduleAttributeStore) String(name string) (string, error) {
 
 	return "", errValueMismatch
 }
+
+func (m moduleAttributeStore) StringSlice(name string) ([]string, error) {
+	v, ok := m[name]
+	if !ok {
+		return nil, errValueNotSet
+	}
+
+	switch v.(type) {
+	case []string:
+		return v.([]string), nil
+
+	case []interface{}:
+		var out []string
+
+		for _, iv := range v.([]interface{}) {
+			sv, ok := iv.(string)
+			if !ok {
+				return nil, errors.New("value in slice was not string")
+			}
+			out = append(out, sv)
+		}
+
+		return out, nil
+	}
+
+	return nil, errValueMismatch
+}

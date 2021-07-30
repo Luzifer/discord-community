@@ -16,6 +16,19 @@ module_configs:
 
 # Modules
 
+## Type: `liveposting`
+
+Announces stream live status based on Discord streaming status
+
+| Attribute | Req. | Type | Default Value | Description |
+| --------- | :--: | ---- | ------------- | ----------- |
+| `discord_channel_id` | ✅ | string |  | ID of the Discord channel to post the message to |
+| `post_text` | ✅ | string |  | Message to post to channel use `${displayname}` and `${username}` as placeholders |
+| `twitch_client_id` | ✅ | string |  | Twitch client ID the token was issued for |
+| `twitch_client_secret` | ✅ | string |  | Secret for the Twitch app identified with twitch_client_id |
+| `stream_freshness` |  | duration | `5m` | How long after stream start to post shoutout |
+| `whitelisted_role` |  | string |  | Only post for members of this role |
+
 ## Type: `liverole`
 
 Adds live-role to certain group of users if they are streaming on Twitch

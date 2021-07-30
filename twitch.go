@@ -74,6 +74,22 @@ type (
 			Cursor string `json:"cursor"`
 		} `json:"pagination"`
 	}
+
+	twitchUserListing struct {
+		Data []struct {
+			ID              string    `json:"id"`
+			Login           string    `json:"login"`
+			DisplayName     string    `json:"display_name"`
+			Type            string    `json:"type"`
+			BroadcasterType string    `json:"broadcaster_type"`
+			Description     string    `json:"description"`
+			ProfileImageURL string    `json:"profile_image_url"`
+			OfflineImageURL string    `json:"offline_image_url"`
+			ViewCount       int64     `json:"view_count"`
+			Email           string    `json:"email"`
+			CreatedAt       time.Time `json:"created_at"`
+		} `json:"data"`
+	}
 )
 
 func newTwitchAdapter(clientID, clientSecret, token string) *twitchAdapter {
@@ -115,6 +131,22 @@ func (t twitchAdapter) GetStreamsForUser(ctx context.Context, userName string) (
 			return errors.Wrap(
 				t.request(ctx, http.MethodGet, "/helix/streams", params, nil, out),
 				"fetching streams",
+			)
+		})
+}
+
+func (t twitchAdapter) GetUserByUsername(ctx context.Context, userName string) (*twitchUserListing, error) {
+	out := &twitchUserListing{}
+
+	params := make(url.Values)
+	params.Set("login", strings.ToLower(userName))
+
+	return out, backoff.NewBackoff().
+		WithMaxIterations(twitchAPIRequestLimit).
+		Retry(func() error {
+			return errors.Wrap(
+				t.request(ctx, http.MethodGet, "/helix/users", params, nil, out),
+				"fetching user",
 			)
 		})
 }
