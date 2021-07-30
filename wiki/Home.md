@@ -25,6 +25,8 @@ Cleans up old messages from a channel (for example announcement channel) which a
 | `discord_channel_id` | ✅ | string |  | ID of the Discord channel to clean up |
 | `retention` | ✅ | duration |  | How long to keep messages in this channel |
 | `cron` |  | string | `0 * * * *` | When to execute the cleaner |
+| `only_users` |  | []string | `[]` | When this list contains user IDs, only posts authored by those IDs will be deleted |
+| `protect_users` |  | []string | `[]` | When this list contains user IDs, posts authored by those IDs will not be deleted |
 
 ## Type: `liveposting`
 
