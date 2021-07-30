@@ -16,6 +16,16 @@ module_configs:
 
 # Modules
 
+## Type: `clearchannel`
+
+Cleans up old messages from a channel (for example announcement channel) which are older than the retention time
+
+| Attribute | Req. | Type | Default Value | Description |
+| --------- | :--: | ---- | ------------- | ----------- |
+| `discord_channel_id` | ✅ | string |  | ID of the Discord channel to clean up |
+| `retention` | ✅ | duration |  | How long to keep messages in this channel |
+| `cron` |  | string | `0 * * * *` | When to execute the cleaner |
+
 ## Type: `liveposting`
 
 Announces stream live status based on Discord streaming status
