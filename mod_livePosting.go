@@ -80,14 +80,12 @@ func (m modLivePosting) cronFetchChannelStatus() {
 		return
 	}
 
-	for _, username := range usernames {
-		if err = m.fetchAndPostForUsername(username); err != nil {
-			log.WithError(err).WithField("username", username).Error("Unable to post status for user")
-		}
+	if err = m.fetchAndPostForUsername(usernames...); err != nil {
+		log.WithError(err).Error("Unable to post status for users")
 	}
 }
 
-func (m modLivePosting) fetchAndPostForUsername(username string) error {
+func (m modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
 		m.attrs.MustString("twitch_client_id", nil),
@@ -96,43 +94,43 @@ func (m modLivePosting) fetchAndPostForUsername(username string) error {
 		"", // No User-Token used
 	)
 
-	users, err := twitch.GetUserByUsername(context.Background(), username)
+	users, err := twitch.GetUserByUsername(context.Background(), usernames...)
 	if err != nil {
 		return errors.Wrap(err, "fetching twitch user details")
 	}
 
-	if l := len(users.Data); l != 1 {
-		return errors.Errorf("no user information found for %s", username)
-	}
-
-	streams, err := twitch.GetStreamsForUser(context.Background(), username)
+	streams, err := twitch.GetStreamsForUser(context.Background(), usernames...)
 	if err != nil {
 		return errors.Wrap(err, "fetching streams for user")
 	}
 
-	if l := len(streams.Data); l != 1 {
-		// There is no active stream
-		return nil
+	for _, stream := range streams.Data {
+		for _, user := range users.Data {
+			if user.ID != stream.ID {
+				continue
+			}
+
+			// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
+			ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
+			if stream.StartedAt.Add(ignoreTime).Before(time.Now()) {
+				// Stream is too old, don't annoounce
+				return nil
+			}
+
+			if err = m.sendLivePost(
+				user.Login,
+				user.DisplayName,
+				stream.Title,
+				stream.GameName,
+				stream.ThumbnailURL,
+				user.ProfileImageURL,
+			); err != nil {
+				return errors.Wrap(err, "sending post")
+			}
+		}
 	}
 
-	// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
-	ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
-	if streams.Data[0].StartedAt.Add(ignoreTime).Before(time.Now()) {
-		// Stream is too old, don't annoounce
-		return nil
-	}
-
-	return errors.Wrap(
-		m.sendLivePost(
-			users.Data[0].Login,
-			users.Data[0].DisplayName,
-			streams.Data[0].Title,
-			streams.Data[0].GameName,
-			streams.Data[0].ThumbnailURL,
-			users.Data[0].ProfileImageURL,
-		),
-		"sending post",
-	)
+	return nil
 }
 
 func (m modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.PresenceUpdate) {
