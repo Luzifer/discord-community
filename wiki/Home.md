@@ -7,6 +7,8 @@
 - Give it a name which later will be your bots name, optionally upload an image which will be its profile image
 - Disable "Public Bot", enable the "Privileged Gateway Intents"
 - Copy and note your bots token (you will need to enter it into the `bot_token` field of the config)
+- Add your bot to your server (replace `<client-id>` with the client ID of your bot, find that by clicking "OAuth2" in the left sidebar):  
+`https://discord.com/oauth2/authorize?client_id=<client-id>&scope=bot%20applications.commands&permissions=1945627743`
 
 ## Create a config
 
