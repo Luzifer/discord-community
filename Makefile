@@ -1,3 +1,5 @@
+BRANCH:=$(shell git branch --show-current)
+
 default:
 
 lint:
@@ -31,4 +33,7 @@ push_wiki:
 # --- Local dev
 
 auto-hook-pre-commit: gendoc
+
+ifeq ($(BRANCH), master)
 auto-hook-post-push: push_wiki
+endif
