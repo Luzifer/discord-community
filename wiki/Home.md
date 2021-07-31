@@ -39,7 +39,7 @@ Announces stream live status based on Discord streaming status
 | `twitch_client_id` | ✅ | string |  | Twitch client ID the token was issued for |
 | `twitch_client_secret` | ✅ | string |  | Secret for the Twitch app identified with twitch_client_id |
 | `stream_freshness` |  | duration | `5m` | How long after stream start to post shoutout |
-| `whitelisted_role` |  | string |  | Only post for members of this role |
+| `whitelisted_role` |  | string |  | Only post for members of this role ID |
 
 ## Type: `liverole`
 
@@ -50,7 +50,7 @@ Adds live-role to certain group of users if they are streaming on Twitch
 | `role_streamers_live` | ✅ | string |  | Role ID to assign to live streamers |
 | `twitch_client_id` | ✅ | string |  | Twitch client ID the token was issued for |
 | `twitch_client_secret` | ✅ | string |  | Secret for the Twitch app identified with twitch_client_id |
-| `role_streamers` |  | string |  | Only take members with this role into account |
+| `role_streamers` |  | string |  | Only take members with this role ID into account |
 
 ## Type: `presence`
 

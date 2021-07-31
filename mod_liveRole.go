@@ -76,7 +76,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		return
 	}
 
-	// @attr role_streamers optional string "" Only take members with this role into account
+	// @attr role_streamers optional string "" Only take members with this role ID into account
 	roleStreamer := m.attrs.MustString("role_streamers", ptrStringEmpty)
 	if roleStreamer != "" && !str.StringInSlice(roleStreamer, member.Roles) {
 		// User is not part of the streamer role

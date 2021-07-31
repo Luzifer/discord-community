@@ -74,7 +74,7 @@ func (m modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.
 		return
 	}
 
-	// @attr whitelisted_role optional string "" Only post for members of this role
+	// @attr whitelisted_role optional string "" Only post for members of this role ID
 	whitelistedRole := m.attrs.MustString("whitelisted_role", ptrStringEmpty)
 	if whitelistedRole != "" && !str.StringInSlice(whitelistedRole, member.Roles) {
 		// User is not allowed for this config
