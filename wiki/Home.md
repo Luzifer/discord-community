@@ -38,6 +38,8 @@ Announces stream live status based on Discord streaming status
 | `post_text` | ✅ | string |  | Message to post to channel use `${displayname}` and `${username}` as placeholders |
 | `twitch_client_id` | ✅ | string |  | Twitch client ID the token was issued for |
 | `twitch_client_secret` | ✅ | string |  | Secret for the Twitch app identified with twitch_client_id |
+| `cron` |  | string | `*/5 * * * *` | Fetch live status of `poll_usernames` (set to empty string to disable) |
+| `poll_usernames` |  | []string | `[]` | Check these usernames for active streams when executing the `cron` |
 | `stream_freshness` |  | duration | `5m` | How long after stream start to post shoutout |
 | `whitelisted_role` |  | string |  | Only post for members of this role |
 
