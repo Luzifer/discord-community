@@ -1,5 +1,17 @@
 default:
 
+lint:
+	golangci-lint run --timeout=5m
+
+publish:
+	curl -sSLo golang.sh https://raw.githubusercontent.com/Luzifer/github-publish/master/golang.sh
+	bash golang.sh
+
+test:
+	go test -cover -v .
+
+# --- Documentation
+
 gendoc: .venv
 	.venv/bin/python3 ci/gendoc.py $(shell grep -l '@module ' *.go) >wiki/Home.md
 	git add wiki/Home.md
