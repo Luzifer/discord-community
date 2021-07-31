@@ -18,6 +18,10 @@ import (
  * @module_desc Updates the presence status of the bot to display the next stream
  */
 
+const (
+	presenceTimeDay = 24 * time.Hour
+)
+
 func init() {
 	RegisterModule("presence", func() module { return &modPresence{} })
 }
@@ -49,7 +53,7 @@ func (m *modPresence) Initialize(crontab *cron.Cron, discord *discordgo.Session,
 }
 
 func (m modPresence) cronUpdatePresence() {
-	var nextStream *time.Time = nil
+	var nextStream *time.Time
 
 	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
@@ -95,8 +99,8 @@ func (m modPresence) cronUpdatePresence() {
 
 func (m modPresence) durationToHumanReadable(d time.Duration) string {
 	d = time.Duration(math.Abs(float64(d)))
-	if d > time.Hour*24 {
-		return fmt.Sprintf("%.0f Tagen", math.Round(float64(d)/float64(time.Hour*24)))
+	if d > presenceTimeDay {
+		return fmt.Sprintf("%.0f Tagen", math.Round(float64(d)/float64(presenceTimeDay)))
 	}
 
 	var elements []string

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +18,16 @@ import (
  * @module liveposting
  * @module_desc Announces stream live status based on Discord streaming status
  */
+
+const (
+	livePostingDefaultStreamFreshness = 5 * time.Minute
+	livePostingDiscordProfileHeight   = 300
+	livePostingDiscordProfileWidth    = 300
+	livePostingNumberOfMessagesToLoad = 100
+	livePostingPreviewHeight          = 180
+	livePostingPreviewWidth           = 320
+	livePostingTwitchColor            = 0x6441a5
+)
 
 func init() {
 	RegisterModule("liveposting", func() module { return &modLivePosting{} })
@@ -46,6 +57,7 @@ func (m *modLivePosting) Initialize(crontab *cron.Cron, discord *discordgo.Sessi
 	return nil
 }
 
+//nolint: gocyclo // One directive too many, makes no sense to split
 func (m modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.PresenceUpdate) {
 	if p.User == nil {
 		// The frick? Non-user presence?
@@ -127,7 +139,7 @@ func (m modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.
 	}
 
 	// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
-	ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(5*time.Minute))
+	ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
 	if streams.Data[0].StartedAt.Add(ignoreTime).Before(time.Now()) {
 		// Stream is too old, don't annoounce
 		return
@@ -156,12 +168,12 @@ func (m modLivePosting) sendLivePost(username, displayName, title, game, preview
 	)
 
 	// @attr discord_channel_id required string "" ID of the Discord channel to post the message to
-	msgs, err := m.discord.ChannelMessages(m.attrs.MustString("discord_channel_id", nil), 100, "", "", "")
+	msgs, err := m.discord.ChannelMessages(m.attrs.MustString("discord_channel_id", nil), livePostingNumberOfMessagesToLoad, "", "", "")
 	if err != nil {
 		return errors.Wrap(err, "fetching previous messages")
 	}
 
-	ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(5*time.Minute))
+	ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
 	for _, msg := range msgs {
 		mt, err := msg.Timestamp.Parse()
 		if err != nil {
@@ -177,19 +189,19 @@ func (m modLivePosting) sendLivePost(username, displayName, title, game, preview
 			Name:    displayName,
 			IconURL: profileImage,
 		},
-		Color: 0x6441a5,
+		Color: livePostingTwitchColor,
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "Game", Value: game},
 		},
 		Image: &discordgo.MessageEmbedImage{
-			URL:    strings.NewReplacer("{width}", "320", "{height}", "180").Replace(previewImage),
-			Width:  320,
-			Height: 180,
+			URL:    strings.NewReplacer("{width}", strconv.Itoa(livePostingPreviewWidth), "{height}", strconv.Itoa(livePostingPreviewHeight)).Replace(previewImage),
+			Width:  livePostingPreviewWidth,
+			Height: livePostingPreviewHeight,
 		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL:    profileImage,
-			Width:  300,
-			Height: 300,
+			Width:  livePostingDiscordProfileWidth,
+			Height: livePostingDiscordProfileHeight,
 		},
 		Title: title,
 		Type:  discordgo.EmbedTypeRich,

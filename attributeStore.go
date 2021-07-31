@@ -80,15 +80,15 @@ func (m moduleAttributeStore) Int64(name string) (int64, error) {
 		return 0, errValueNotSet
 	}
 
-	switch v.(type) {
+	switch v := v.(type) {
 	case int:
-		return int64(v.(int)), nil
+		return int64(v), nil
 	case int16:
-		return int64(v.(int16)), nil
+		return int64(v), nil
 	case int32:
-		return int64(v.(int32)), nil
+		return int64(v), nil
 	case int64:
-		return v.(int64), nil
+		return v, nil
 	}
 
 	return 0, errValueMismatch
@@ -117,14 +117,14 @@ func (m moduleAttributeStore) StringSlice(name string) ([]string, error) {
 		return nil, errValueNotSet
 	}
 
-	switch v.(type) {
+	switch v := v.(type) {
 	case []string:
-		return v.([]string), nil
+		return v, nil
 
 	case []interface{}:
 		var out []string
 
-		for _, iv := range v.([]interface{}) {
+		for _, iv := range v {
 			sv, ok := iv.(string)
 			if !ok {
 				return nil, errors.New("value in slice was not string")

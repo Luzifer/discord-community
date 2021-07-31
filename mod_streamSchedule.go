@@ -17,9 +17,14 @@ import (
  * @module_desc Posts stream schedule derived from Twitch schedule as embed in Discord channel
  */
 
+const (
+	streamScheduleDefaultColor           = 0x2ECC71
+	streamScheduleNumberOfMessagesToLoad = 100
+)
+
 var (
-	defaultStreamScheduleEntries  = ptrInt64(5)
-	defaultStreamSchedulePastTime = ptrDuration(15 * time.Minute)
+	defaultStreamScheduleEntries  = ptrInt64(5)                   //nolint: gomnd // This is already the "constant"
+	defaultStreamSchedulePastTime = ptrDuration(15 * time.Minute) //nolint: gomnd // This is already the "constant"
 )
 
 func init() {
@@ -75,13 +80,13 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 	}
 
 	msgEmbed := &discordgo.MessageEmbed{
-		// @attr embed_color optional int64 "3066993" Integer representation of the hex color for the embed (default is #2ECC71)
-		Color: int(m.attrs.MustInt64("embed_color", ptrInt64(3066993))),
+		// @attr embed_color optional int64 "0x2ECC71" Integer representation of the hex color for the embed
+		Color: int(m.attrs.MustInt64("embed_color", ptrInt64(streamScheduleDefaultColor))),
 		// @attr embed_description optional string "" Description for the embed block
 		Description: m.attrs.MustString("embed_description", ptrStringEmpty),
 		Fields:      []*discordgo.MessageEmbedField{},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
+			// @attr embed_thumbnail_url optional string "" Publically hosted image URL to u100se as thumbnail
 			URL: m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty),
 			// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
 			Width: int(m.attrs.MustInt64("embed_thumbnail_width", ptrInt64Zero)),
@@ -117,7 +122,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 	}
 
 	// @attr discord_channel_id required string "" ID of the Discord channel to post the message to
-	msgs, err := m.discord.ChannelMessages(m.attrs.MustString("discord_channel_id", nil), 100, "", "", "")
+	msgs, err := m.discord.ChannelMessages(m.attrs.MustString("discord_channel_id", nil), streamScheduleNumberOfMessagesToLoad, "", "", "")
 	if err != nil {
 		log.WithError(err).Error("Unable to fetch announcement channel messages")
 		return

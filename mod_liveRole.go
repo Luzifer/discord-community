@@ -83,7 +83,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		return
 	}
 
-	var exitFunc func(string, string, []string) error = m.removeLiveStreamerRole
+	var exitFunc func(string, string, []string) error
 	defer func() {
 		if exitFunc != nil {
 			if err := exitFunc(p.GuildID, p.User.ID, member.Roles); err != nil {

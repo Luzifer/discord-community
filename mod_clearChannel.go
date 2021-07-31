@@ -17,6 +17,10 @@ import (
  * @module_desc Cleans up old messages from a channel (for example announcement channel) which are older than the retention time
  */
 
+const (
+	clearChannelNumberOfMessagesToLoad = 100
+)
+
 func init() {
 	RegisterModule("clearchannel", func() module { return &modClearChannel{} })
 }
@@ -79,15 +83,15 @@ func (m modClearChannel) cronClearChannel() {
 	}
 
 	for {
-		msgs, err := m.discord.ChannelMessages(channelID, 100, "", after, "")
+		msgs, err := m.discord.ChannelMessages(channelID, clearChannelNumberOfMessagesToLoad, "", after, "")
 		if err != nil {
 			log.WithError(err).Error("Unable to fetch announcement channel messages")
 			return
 		}
 
 		sort.Slice(msgs, func(i, j int) bool {
-			iu, _ := strconv.ParseUint(msgs[i].ID, 10, 64)
-			ju, _ := strconv.ParseUint(msgs[j].ID, 10, 64)
+			iu, _ := strconv.ParseUint(msgs[i].ID, 10, 64) //nolint: gomnd // These make no sense to define as constants
+			ju, _ := strconv.ParseUint(msgs[j].ID, 10, 64) //nolint: gomnd // These make no sense to define as constants
 			return iu < ju
 		})
 
