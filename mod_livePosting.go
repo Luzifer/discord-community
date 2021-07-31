@@ -67,7 +67,7 @@ func (m *modLivePosting) Initialize(crontab *cron.Cron, discord *discordgo.Sessi
 }
 
 func (m modLivePosting) cronFetchChannelStatus() {
-	// @attr poll_usernames optional []string "[]" Check these usernames for active streams when executing the `cron`
+	// @attr poll_usernames optional []string "[]" Check these usernames for active streams when executing the `cron` (at most 100 users can be checked)
 	usernames, err := m.attrs.StringSlice("poll_usernames")
 	switch err {
 	case nil:
