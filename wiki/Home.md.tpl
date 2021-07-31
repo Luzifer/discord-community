@@ -29,7 +29,8 @@
 - Unpack the archive you've downloaded
 - Start the bot in the same directory as your config (or provide a path to the config):
 ```console
-# ./discord-community --config=config.yaml
+# ./discord-community_linux_amd64 --config=config.yaml
+# discord-community_windows_amd64.exe --config=config.yaml
 ```
 
 # Config format
