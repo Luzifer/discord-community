@@ -96,7 +96,7 @@ func (m modPresence) cronUpdatePresence() {
 func (m modPresence) durationToHumanReadable(d time.Duration) string {
 	d = time.Duration(math.Abs(float64(d)))
 	if d > time.Hour*24 {
-		return fmt.Sprintf("%.0f Tagen", math.Ceil(float64(d)/float64(time.Hour*24)))
+		return fmt.Sprintf("%.0f Tagen", math.Round(float64(d)/float64(time.Hour*24)))
 	}
 
 	var elements []string
