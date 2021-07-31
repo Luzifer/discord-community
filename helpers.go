@@ -4,7 +4,6 @@ import "time"
 
 var (
 	ptrBoolFalse   = ptrBool(false)
-	ptrBoolTrue    = ptrBool(true)
 	ptrInt64Zero   = ptrInt64(0)
 	ptrStringEmpty = ptrString("")
 )
