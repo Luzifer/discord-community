@@ -16,7 +16,7 @@ Please see the [Wiki](https://github.com/Luzifer/discord-community/wiki) for doc
 
 ```console
 # discord-community --help
-Usage of ./discord-community:
+Usage of discord-community:
   -c, --config string      Path to config file (default "config.yaml")
       --listen string      Port/IP to listen on (default ":3000")
       --log-level string   Log level (debug, info, warn, error, fatal) (default "info")
