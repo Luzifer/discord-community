@@ -54,7 +54,7 @@ func (m *modLivePosting) Initialize(crontab *cron.Cron, discord *discordgo.Sessi
 
 	discord.AddHandler(m.handlePresenceUpdate)
 
-	// @attr cron optional string "*/5 * * * *" Fetch live status of `poll_usernames` (set to empty string to disable)
+	// @attr cron optional string "*/5 * * * *" Fetch live status of `poll_usernames` (set to empty string to disable): keep this below `stream_freshness` or you might miss streams
 	if cronDirective := attrs.MustString("cron", ptrString("*/5 * * * *")); cronDirective != "" {
 		if _, err := crontab.AddFunc(cronDirective, m.cronFetchChannelStatus); err != nil {
 			return errors.Wrap(err, "adding cron function")
