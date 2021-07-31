@@ -45,14 +45,16 @@ func (m *modLivePosting) Initialize(crontab *cron.Cron, discord *discordgo.Sessi
 	if err := attrs.Expect(
 		"discord_channel_id",
 		"post_text",
-		"whitelisted_role",
 		"twitch_client_id",
 		"twitch_client_secret",
 	); err != nil {
 		return errors.Wrap(err, "validating attributes")
 	}
 
-	discord.AddHandler(m.handlePresenceUpdate)
+	// @attr disable_presence optional bool "false" Disable posting live-postings for discord presence changes
+	if !attrs.MustBool("disable_presence", ptrBoolFalse) {
+		discord.AddHandler(m.handlePresenceUpdate)
+	}
 
 	// @attr cron optional string "*/5 * * * *" Fetch live status of `poll_usernames` (set to empty string to disable): keep this below `stream_freshness` or you might miss streams
 	if cronDirective := attrs.MustString("cron", ptrString("*/5 * * * *")); cronDirective != "" {
