@@ -6,7 +6,7 @@
 - Go to "Bot" in your newly created application and click "Add a bot"
 - Give it a name which later will be your bots name, optionally upload an image which will be its profile image
 - Disable "Public Bot", enable the "Privileged Gateway Intents"
-- Copy and note your bots token (you will need to enter it into the `bot_token` field of the config
+- Copy and note your bots token (you will need to enter it into the `bot_token` field of the config)
 
 ## Create a config
 
