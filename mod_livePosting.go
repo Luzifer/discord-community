@@ -80,6 +80,8 @@ func (m modLivePosting) cronFetchChannelStatus() {
 		return
 	}
 
+	log.WithField("entries", len(usernames)).Trace("Fetching streams for users (cron)")
+
 	if err = m.fetchAndPostForUsername(usernames...); err != nil {
 		log.WithError(err).Error("Unable to post status for users")
 	}
@@ -104,15 +106,20 @@ func (m modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 		return errors.Wrap(err, "fetching streams for user")
 	}
 
+	log.WithFields(log.Fields{
+		"streams": len(streams.Data),
+		"users":   len(users.Data),
+	}).Trace("Found active streams from users")
+
 	for _, stream := range streams.Data {
 		for _, user := range users.Data {
-			if user.ID != stream.ID {
+			if user.ID != stream.UserID {
 				continue
 			}
 
 			// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
-			ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
-			if stream.StartedAt.Add(ignoreTime).Before(time.Now()) {
+			streamFreshness := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
+			if time.Since(stream.StartedAt) > streamFreshness {
 				// Stream is too old, don't annoounce
 				return nil
 			}
