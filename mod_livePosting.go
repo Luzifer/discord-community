@@ -45,19 +45,101 @@ func (m *modLivePosting) Initialize(crontab *cron.Cron, discord *discordgo.Sessi
 	if err := attrs.Expect(
 		"discord_channel_id",
 		"post_text",
-		"whitelisted_role",
 		"twitch_client_id",
 		"twitch_client_secret",
 	); err != nil {
 		return errors.Wrap(err, "validating attributes")
 	}
 
-	discord.AddHandler(m.handlePresenceUpdate)
+	// @attr disable_presence optional bool "false" Disable posting live-postings for discord presence changes
+	if !attrs.MustBool("disable_presence", ptrBoolFalse) {
+		discord.AddHandler(m.handlePresenceUpdate)
+	}
+
+	// @attr cron optional string "*/5 * * * *" Fetch live status of `poll_usernames` (set to empty string to disable): keep this below `stream_freshness` or you might miss streams
+	if cronDirective := attrs.MustString("cron", ptrString("*/5 * * * *")); cronDirective != "" {
+		if _, err := crontab.AddFunc(cronDirective, m.cronFetchChannelStatus); err != nil {
+			return errors.Wrap(err, "adding cron function")
+		}
+	}
 
 	return nil
 }
 
-//nolint: gocyclo // One directive too many, makes no sense to split
+func (m modLivePosting) cronFetchChannelStatus() {
+	// @attr poll_usernames optional []string "[]" Check these usernames for active streams when executing the `cron` (at most 100 users can be checked)
+	usernames, err := m.attrs.StringSlice("poll_usernames")
+	switch err {
+	case nil:
+		// We got a list of users
+	case errValueNotSet:
+		// There is no list of users
+		return
+	default:
+		log.WithError(err).Error("Unable to get poll_usernames list")
+		return
+	}
+
+	log.WithField("entries", len(usernames)).Trace("Fetching streams for users (cron)")
+
+	if err = m.fetchAndPostForUsername(usernames...); err != nil {
+		log.WithError(err).Error("Unable to post status for users")
+	}
+}
+
+func (m modLivePosting) fetchAndPostForUsername(usernames ...string) error {
+	twitch := newTwitchAdapter(
+		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
+		m.attrs.MustString("twitch_client_id", nil),
+		// @attr twitch_client_secret required string "" Secret for the Twitch app identified with twitch_client_id
+		m.attrs.MustString("twitch_client_secret", nil),
+		"", // No User-Token used
+	)
+
+	users, err := twitch.GetUserByUsername(context.Background(), usernames...)
+	if err != nil {
+		return errors.Wrap(err, "fetching twitch user details")
+	}
+
+	streams, err := twitch.GetStreamsForUser(context.Background(), usernames...)
+	if err != nil {
+		return errors.Wrap(err, "fetching streams for user")
+	}
+
+	log.WithFields(log.Fields{
+		"streams": len(streams.Data),
+		"users":   len(users.Data),
+	}).Trace("Found active streams from users")
+
+	for _, stream := range streams.Data {
+		for _, user := range users.Data {
+			if user.ID != stream.UserID {
+				continue
+			}
+
+			// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
+			streamFreshness := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
+			if time.Since(stream.StartedAt) > streamFreshness {
+				// Stream is too old, don't annoounce
+				return nil
+			}
+
+			if err = m.sendLivePost(
+				user.Login,
+				user.DisplayName,
+				stream.Title,
+				stream.GameName,
+				stream.ThumbnailURL,
+				user.ProfileImageURL,
+			); err != nil {
+				return errors.Wrap(err, "sending post")
+			}
+		}
+	}
+
+	return nil
+}
+
 func (m modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.PresenceUpdate) {
 	if p.User == nil {
 		// The frick? Non-user presence?
@@ -108,52 +190,8 @@ func (m modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.
 
 	twitchUsername := strings.TrimLeft(u.Path, "/")
 
-	twitch := newTwitchAdapter(
-		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
-		m.attrs.MustString("twitch_client_id", nil),
-		// @attr twitch_client_secret required string "" Secret for the Twitch app identified with twitch_client_id
-		m.attrs.MustString("twitch_client_secret", nil),
-		"", // No User-Token used
-	)
-
-	users, err := twitch.GetUserByUsername(context.Background(), twitchUsername)
-	if err != nil {
-		logger.WithError(err).WithField("user", twitchUsername).Warning("Unable to fetch details for user")
-		return
-	}
-
-	if l := len(users.Data); l != 1 {
-		logger.WithError(err).WithField("url", activity.URL).Warning("Unable to fetch user for login")
-		return
-	}
-
-	streams, err := twitch.GetStreamsForUser(context.Background(), twitchUsername)
-	if err != nil {
-		logger.WithError(err).WithField("user", twitchUsername).Debug("Unable to fetch streams for user")
-		return
-	}
-
-	if l := len(streams.Data); l != 1 {
-		logger.WithError(err).WithField("url", activity.URL).Debug("Unable to fetch streams for login")
-		return
-	}
-
-	// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
-	ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
-	if streams.Data[0].StartedAt.Add(ignoreTime).Before(time.Now()) {
-		// Stream is too old, don't annoounce
-		return
-	}
-
-	if err = m.sendLivePost(
-		users.Data[0].Login,
-		users.Data[0].DisplayName,
-		streams.Data[0].Title,
-		streams.Data[0].GameName,
-		streams.Data[0].ThumbnailURL,
-		users.Data[0].ProfileImageURL,
-	); err != nil {
-		logger.WithError(err).WithField("url", activity.URL).Error("Unable to send post")
+	if err = m.fetchAndPostForUsername(twitchUsername); err != nil {
+		logger.WithError(err).WithField("url", activity.URL).Error("Unable to fetch info / post live posting")
 		return
 	}
 }

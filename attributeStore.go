@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +30,17 @@ func (m moduleAttributeStore) Expect(keys ...string) error {
 	}
 
 	return nil
+}
+
+func (m moduleAttributeStore) MustBool(name string, defVal *bool) bool {
+	v, err := m.Bool(name)
+	if err != nil {
+		if defVal != nil {
+			return *defVal
+		}
+		panic(err)
+	}
+	return v
 }
 
 func (m moduleAttributeStore) MustDuration(name string, defVal *time.Duration) time.Duration {
@@ -62,6 +74,23 @@ func (m moduleAttributeStore) MustString(name string, defVal *string) string {
 		panic(err)
 	}
 	return v
+}
+
+func (m moduleAttributeStore) Bool(name string) (bool, error) {
+	v, ok := m[name]
+	if !ok {
+		return false, errValueNotSet
+	}
+
+	switch v := v.(type) {
+	case bool:
+		return v, nil
+	case string:
+		bv, err := strconv.ParseBool(v)
+		return bv, errors.Wrap(err, "parsing string to bool")
+	}
+
+	return false, errValueMismatch
 }
 
 func (m moduleAttributeStore) Duration(name string) (time.Duration, error) {

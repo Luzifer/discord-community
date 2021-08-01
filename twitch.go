@@ -119,11 +119,12 @@ func (t twitchAdapter) GetChannelStreamSchedule(ctx context.Context, broadcaster
 		})
 }
 
-func (t twitchAdapter) GetStreamsForUser(ctx context.Context, userName string) (*twitchStreamListing, error) {
+func (t twitchAdapter) GetStreamsForUser(ctx context.Context, userNames ...string) (*twitchStreamListing, error) {
 	out := &twitchStreamListing{}
 
 	params := make(url.Values)
-	params.Set("user_login", strings.ToLower(userName))
+	params.Set("first", "100")
+	params["user_login"] = userNames
 
 	return out, backoff.NewBackoff().
 		WithMaxIterations(twitchAPIRequestLimit).
@@ -135,11 +136,12 @@ func (t twitchAdapter) GetStreamsForUser(ctx context.Context, userName string) (
 		})
 }
 
-func (t twitchAdapter) GetUserByUsername(ctx context.Context, userName string) (*twitchUserListing, error) {
+func (t twitchAdapter) GetUserByUsername(ctx context.Context, userNames ...string) (*twitchUserListing, error) {
 	out := &twitchUserListing{}
 
 	params := make(url.Values)
-	params.Set("login", strings.ToLower(userName))
+	params.Set("first", "100")
+	params["login"] = userNames
 
 	return out, backoff.NewBackoff().
 		WithMaxIterations(twitchAPIRequestLimit).
