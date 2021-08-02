@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -87,7 +86,7 @@ func (m modPresence) cronUpdatePresence() {
 	// @attr fallback_text required string "" What to set the text to when no stream is found (`playing <text>`)
 	status := m.attrs.MustString("fallback_text", nil)
 	if nextStream != nil {
-		status = fmt.Sprintf("in: %s", m.durationToHumanReadable(time.Since(*nextStream)))
+		status = m.durationToHumanReadable(time.Since(*nextStream))
 	}
 
 	if err := m.discord.UpdateGameStatus(0, status); err != nil {
@@ -99,24 +98,18 @@ func (m modPresence) cronUpdatePresence() {
 
 func (m modPresence) durationToHumanReadable(d time.Duration) string {
 	d = time.Duration(math.Abs(float64(d)))
+
 	if d > presenceTimeDay {
-		return fmt.Sprintf("%.0f Tagen", math.Round(float64(d)/float64(presenceTimeDay)))
+		return fmt.Sprintf("in %.0f Tagen", math.Round(float64(d)/float64(presenceTimeDay)))
 	}
 
-	var elements []string
-
-	for div, req := range map[time.Duration]bool{
-		time.Hour:   true,
-		time.Minute: true,
-	} {
-		if d < div && !req {
-			continue
-		}
-
-		pt := d / div
-		d -= pt * div
-		elements = append(elements, fmt.Sprintf("%.2d", pt))
+	if d > time.Hour {
+		return fmt.Sprintf("in %.0f Stunden", math.Round(float64(d)/float64(time.Hour)))
 	}
 
-	return strings.Join(elements, ":")
+	if d > time.Minute {
+		return fmt.Sprintf("in %.0f Minuten", math.Round(float64(d)/float64(time.Minute)))
+	}
+
+	return "gleich"
 }
