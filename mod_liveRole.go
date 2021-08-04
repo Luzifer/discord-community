@@ -66,6 +66,11 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		return
 	}
 
+	if p.GuildID != config.GuildID {
+		// Bot is in multiple guilds, we don't have a config for this one
+		return
+	}
+
 	logger := log.WithFields(log.Fields{
 		"user": p.User.ID,
 	})
