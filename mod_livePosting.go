@@ -222,6 +222,18 @@ func (m modLivePosting) sendLivePost(username, displayName, title, game, preview
 		}
 	}
 
+	// Discord caches the images and the URLs do not change every time
+	// so we force Discord to load a new image every time
+	previewImageURL, err := url.Parse(
+		strings.NewReplacer(
+			"{width}", strconv.Itoa(livePostingPreviewWidth),
+			"{height}", strconv.Itoa(livePostingPreviewHeight),
+		).Replace(previewImage),
+	)
+	previewImageQuery := previewImageURL.Query()
+	previewImageQuery.Add("_discordNoCache", time.Now().Format(time.RFC3339))
+	previewImageURL.RawQuery = previewImageQuery.Encode()
+
 	msgEmbed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    displayName,
@@ -232,7 +244,7 @@ func (m modLivePosting) sendLivePost(username, displayName, title, game, preview
 			{Name: "Game", Value: game},
 		},
 		Image: &discordgo.MessageEmbedImage{
-			URL:    strings.NewReplacer("{width}", strconv.Itoa(livePostingPreviewWidth), "{height}", strconv.Itoa(livePostingPreviewHeight)).Replace(previewImage),
+			URL:    previewImageURL.String(),
 			Width:  livePostingPreviewWidth,
 			Height: livePostingPreviewHeight,
 		},
