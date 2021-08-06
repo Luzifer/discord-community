@@ -1,3 +1,8 @@
+# 0.3.1 / 2021-08-06
+
+  * Fix: Do not break posting on one non-fresh stream
+  * Fix/Optimize: Prevent duplicate attribute parsing
+
 # 0.3.0 / 2021-08-06
 
   * Lint: Handle URL parser error for stream previews
