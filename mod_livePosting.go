@@ -235,6 +235,10 @@ func (m modLivePosting) sendLivePost(username, displayName, title, game, preview
 			"{height}", strconv.Itoa(livePostingPreviewHeight),
 		).Replace(previewImage),
 	)
+	if err != nil {
+		return errors.Wrap(err, "parsing stream preview URL")
+	}
+
 	previewImageQuery := previewImageURL.Query()
 	previewImageQuery.Add("_discordNoCache", time.Now().Format(time.RFC3339))
 	previewImageURL.RawQuery = previewImageQuery.Encode()
