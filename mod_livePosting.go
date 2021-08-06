@@ -120,9 +120,17 @@ func (m modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 				continue
 			}
 
-			if time.Since(stream.StartedAt) > streamFreshness {
+			isFresh := time.Since(stream.StartedAt) <= streamFreshness
+
+			log.WithFields(log.Fields{
+				"isFresh":    isFresh,
+				"started_at": stream.StartedAt,
+				"user":       user.DisplayName,
+			}).Trace("Found user / stream combination")
+
+			if !isFresh {
 				// Stream is too old, don't annoounce
-				return nil
+				continue
 			}
 
 			if err = m.sendLivePost(
