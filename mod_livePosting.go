@@ -111,14 +111,15 @@ func (m modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 		"users":   len(users.Data),
 	}).Trace("Found active streams from users")
 
+	// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
+	streamFreshness := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
+
 	for _, stream := range streams.Data {
 		for _, user := range users.Data {
 			if user.ID != stream.UserID {
 				continue
 			}
 
-			// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
-			streamFreshness := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
 			if time.Since(stream.StartedAt) > streamFreshness {
 				// Stream is too old, don't annoounce
 				return nil
