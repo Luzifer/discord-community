@@ -94,7 +94,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 		Description: m.attrs.MustString("embed_description", ptrStringEmpty),
 		Fields:      []*discordgo.MessageEmbedField{},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			// @attr embed_thumbnail_url optional string "" Publically hosted image URL to u100se as thumbnail
+			// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
 			URL: m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty),
 			// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
 			Width: int(m.attrs.MustInt64("embed_thumbnail_width", ptrInt64Zero)),
@@ -102,7 +102,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 			Height: int(m.attrs.MustInt64("embed_thumbnail_height", ptrInt64Zero)),
 		},
 		Timestamp: time.Now().Format(time.RFC3339),
-		// @attr embed_title required string "" Title of the embed (used to find the managed post, must be unique for that channel)
+		// @attr embed_title required string "" Title of the embed
 		Title: m.attrs.MustString("embed_title", nil),
 		Type:  discordgo.EmbedTypeRich,
 	}
