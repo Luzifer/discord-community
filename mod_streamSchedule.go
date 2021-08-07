@@ -18,8 +18,7 @@ import (
  */
 
 const (
-	streamScheduleDefaultColor           = 0x2ECC71
-	streamScheduleNumberOfMessagesToLoad = 100
+	streamScheduleDefaultColor = 0x2ECC71
 )
 
 var (
@@ -85,6 +84,9 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 		return
 	}
 
+	// @attr discord_channel_id required string "" ID of the Discord channel to post the message to
+	channelID := m.attrs.MustString("discord_channel_id", nil)
+
 	msgEmbed := &discordgo.MessageEmbed{
 		// @attr embed_color optional int64 "0x2ECC71" Integer representation of the hex color for the embed
 		Color: int(m.attrs.MustInt64("embed_color", ptrInt64(streamScheduleDefaultColor))),
@@ -127,20 +129,18 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 		}
 	}
 
-	// @attr discord_channel_id required string "" ID of the Discord channel to post the message to
-	msgs, err := m.discord.ChannelMessages(m.attrs.MustString("discord_channel_id", nil), streamScheduleNumberOfMessagesToLoad, "", "", "")
-	if err != nil {
-		log.WithError(err).Error("Unable to fetch announcement channel messages")
-		return
-	}
-
 	var managedMsg *discordgo.Message
-	for _, msg := range msgs {
-		if len(msg.Embeds) == 0 || msg.Embeds[0].Title != msgEmbed.Title {
-			continue
+	if err = store.ReadWithLock(m.id, func(a moduleAttributeStore) error {
+		mid, err := a.String("message_id")
+		if err == errValueNotSet {
+			return nil
 		}
 
-		managedMsg = msg
+		managedMsg, err = m.discord.ChannelMessage(channelID, mid)
+		return errors.Wrap(err, "fetching managed message")
+	}); err != nil {
+		log.WithError(err).Error("Unable to fetch managed message for stream schedule")
+		return
 	}
 
 	if managedMsg != nil {
@@ -151,12 +151,17 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 			return
 		}
 
-		_, err = m.discord.ChannelMessageEditEmbed(m.attrs.MustString("discord_channel_id", nil), managedMsg.ID, msgEmbed)
+		_, err = m.discord.ChannelMessageEditEmbed(channelID, managedMsg.ID, msgEmbed)
 	} else {
-		_, err = m.discord.ChannelMessageSendEmbed(m.attrs.MustString("discord_channel_id", nil), msgEmbed)
+		managedMsg, err = m.discord.ChannelMessageSendEmbed(channelID, msgEmbed)
 	}
 	if err != nil {
 		log.WithError(err).Error("Unable to announce streamplan")
+		return
+	}
+
+	if err = store.Set(m.id, "message_id", managedMsg.ID); err != nil {
+		log.WithError(err).Error("Unable to store managed message id")
 		return
 	}
 
