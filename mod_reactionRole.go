@@ -147,7 +147,7 @@ func (m modReactionRole) Setup() error {
 }
 
 func (m modReactionRole) extractRoles() (map[string]string, error) {
-	// @attr reaction_roles required []string "" List of strings in format `emote=role-id`
+	// @attr reaction_roles required []string "" List of strings in format `emote=role-id[:set]` (`✅=873653932478574632:set` = Emote ✅ to add role 873653932478574632 and prevent it to be removed again, `:thx:862322180896063489=873649098740342855` = Custom emote `:thx:` with corresponding ID to add role 873649098740342855)
 	list, err := m.attrs.StringSlice("reaction_roles")
 	if err != nil {
 		return nil, errors.Wrap(err, "getting role list")
