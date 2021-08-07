@@ -146,7 +146,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 	if managedMsg != nil {
 		oldEmbed := managedMsg.Embeds[0]
 
-		if !m.embedNeedsUpdate(oldEmbed, msgEmbed) {
+		if isDiscordMessageEmbedEqual(oldEmbed, msgEmbed) {
 			log.Debug("Stream Schedule is up-to-date")
 			return
 		}
@@ -185,42 +185,4 @@ func (m modStreamSchedule) formatGermanShort(t time.Time) string {
 	}
 
 	return strings.Join([]string{wd, t.In(tz).Format("02.01. 15:04"), "Uhr"}, " ")
-}
-
-func (m modStreamSchedule) embedNeedsUpdate(o, n *discordgo.MessageEmbed) bool {
-	if o.Title != n.Title {
-		return true
-	}
-
-	if o.Description != n.Description {
-		return true
-	}
-
-	if o.Thumbnail != nil && n.Thumbnail == nil || o.Thumbnail == nil && n.Thumbnail != nil {
-		return true
-	}
-
-	if o.Thumbnail != nil && o.Thumbnail.URL != n.Thumbnail.URL {
-		return true
-	}
-
-	if len(o.Fields) != len(n.Fields) {
-		return true
-	}
-
-	for i := range o.Fields {
-		if o.Fields[i].Name != n.Fields[i].Name {
-			return true
-		}
-
-		if o.Fields[i].Value != n.Fields[i].Value {
-			return true
-		}
-
-		if o.Fields[i].Inline != n.Fields[i].Inline {
-			return true
-		}
-	}
-
-	return false
 }
