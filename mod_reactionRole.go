@@ -147,7 +147,7 @@ func (m modReactionRole) Setup() error {
 }
 
 func (m modReactionRole) extractRoles() (map[string]string, error) {
-	// @attr reaction_roles required []string "" List of strings in format `emote=role-id[:set]`. `emote` equals a unicode Emote (✅) or a custom emote in form `:<emote-name>:<emote-id>`. `role-id` is the integer ID of the guilds role to add with this emote. If `:set` is added at the end, the role will only be added but not removed when the reaction is removed.
+	// @attr reaction_roles required []string "" List of strings in format `emote=role-id[:set]`. `emote` equals an unicode emote (✅) or a custom emote in form `:<emote-name>:<emote-id>`. `role-id` is the integer ID of the guilds role to add with this emote. If `:set` is added at the end, the role will only be added but not removed when the reaction is removed.
 	list, err := m.attrs.StringSlice("reaction_roles")
 	if err != nil {
 		return nil, errors.Wrap(err, "getting role list")

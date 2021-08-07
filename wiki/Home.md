@@ -116,7 +116,7 @@ Creates a post with pre-set reactions and assigns roles on reaction
 | --------- | :--: | ---- | ------------- | ----------- |
 | `discord_channel_id` | ✅ | string |  | ID of the Discord channel to post the message to |
 | `embed_title` | ✅ | string |  | Title of the embed |
-| `reaction_roles` | ✅ | []string |  | List of strings in format `emote=role-id[:set]`. `emote` equals a unicode Emote (✅) or a custom emote in form `:<emote-name>:<emote-id>`. `role-id` is the integer ID of the guilds role to add with this emote. If `:set` is added at the end, the role will only be added but not removed when the reaction is removed. |
+| `reaction_roles` | ✅ | []string |  | List of strings in format `emote=role-id[:set]`. `emote` equals an unicode emote (✅) or a custom emote in form `:<emote-name>:<emote-id>`. `role-id` is the integer ID of the guilds role to add with this emote. If `:set` is added at the end, the role will only be added but not removed when the reaction is removed. |
 | `embed_color` |  | int64 | `0x2ECC71` | Integer / HEX representation of the color for the embed |
 | `embed_description` |  | string |  | Description for the embed block |
 | `embed_thumbnail_height` |  | int64 |  | Height of the thumbnail |
