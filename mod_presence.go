@@ -51,6 +51,8 @@ func (m *modPresence) Initialize(crontab *cron.Cron, discord *discordgo.Session,
 	return nil
 }
 
+func (m modPresence) Setup() error { return nil }
+
 func (m modPresence) cronUpdatePresence() {
 	var nextStream *time.Time
 

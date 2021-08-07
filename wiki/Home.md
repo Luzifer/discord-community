@@ -105,6 +105,13 @@ Updates the presence status of the bot to display the next stream
 | `cron` |  | string | `* * * * *` | When to execute the module |
 | `schedule_past_time` |  | duration | `15m` | How long in the past should the schedule contain an entry |
 
+## Type: `reactionrole`
+
+Creates a post with pre-set reactions and assigns roles on reaction
+
+| Attribute | Req. | Type | Default Value | Description |
+| --------- | :--: | ---- | ------------- | ----------- |
+
 ## Type: `schedule`
 
 Posts stream schedule derived from Twitch schedule as embed in Discord channel

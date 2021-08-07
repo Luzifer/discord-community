@@ -49,6 +49,8 @@ func (m *modClearChannel) Initialize(crontab *cron.Cron, discord *discordgo.Sess
 	return nil
 }
 
+func (m modClearChannel) Setup() error { return nil }
+
 func (m modClearChannel) cronClearChannel() {
 	var (
 		after        = "0"

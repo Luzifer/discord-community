@@ -16,6 +16,7 @@ var (
 type (
 	module interface {
 		Initialize(crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error
+		Setup() error
 	}
 
 	moduleInitFn func() module

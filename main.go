@@ -47,9 +47,10 @@ func init() {
 
 func main() {
 	var (
-		crontab = cron.New()
-		discord *discordgo.Session
-		err     error
+		crontab       = cron.New()
+		discord       *discordgo.Session
+		err           error
+		activeModules []module
 	)
 
 	if config, err = newConfigFromFile(cfg.Config); err != nil {
@@ -63,7 +64,6 @@ func main() {
 
 	discord.Identify.Intents = discordgo.IntentsAll
 
-	var enabledModules int
 	for i, mc := range config.ModuleConfigs {
 		logger := log.WithFields(log.Fields{
 			"idx":    i,
@@ -78,11 +78,12 @@ func main() {
 			logger.WithError(err).Fatal("Unable to initialize module")
 		}
 
-		enabledModules++
+		activeModules = append(activeModules, mod)
+
 		logger.Debug("Enabled module")
 	}
 
-	if enabledModules == 0 {
+	if len(activeModules) == 0 {
 		log.Warn("No modules were enabled, quitting now")
 		return
 	}
@@ -97,6 +98,13 @@ func main() {
 	crontab.Start()
 	defer crontab.Stop()
 	log.Debug("Crontab started")
+
+	// Execute Setup methods now after we're connected
+	for i, mod := range activeModules {
+		if err = mod.Setup(); err != nil {
+			log.WithError(err).WithField("idx", i).Fatal("Unable to run setup for module")
+		}
+	}
 
 	// Run HTTP server
 	var h http.Handler = http.DefaultServeMux

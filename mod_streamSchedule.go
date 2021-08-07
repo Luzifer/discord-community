@@ -58,6 +58,8 @@ func (m *modStreamSchedule) Initialize(crontab *cron.Cron, discord *discordgo.Se
 	return nil
 }
 
+func (m modStreamSchedule) Setup() error { return nil }
+
 func (m modStreamSchedule) cronUpdateSchedule() {
 	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for

@@ -43,6 +43,8 @@ func (m *modLiveRole) Initialize(crontab *cron.Cron, discord *discordgo.Session,
 	return nil
 }
 
+func (m modLiveRole) Setup() error { return nil }
+
 func (m modLiveRole) addLiveStreamerRole(guildID, userID string, presentRoles []string) error {
 	// @attr role_streamers_live required string "" Role ID to assign to live streamers
 	roleID := m.attrs.MustString("role_streamers_live", nil)
