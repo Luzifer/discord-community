@@ -106,6 +106,21 @@ Updates the presence status of the bot to display the next stream
 | `cron` |  | string | `* * * * *` | When to execute the module |
 | `schedule_past_time` |  | duration | `15m` | How long in the past should the schedule contain an entry |
 
+## Type: `reactionrole`
+
+Creates a post with pre-set reactions and assigns roles on reaction
+
+| Attribute | Req. | Type | Default Value | Description |
+| --------- | :--: | ---- | ------------- | ----------- |
+| `discord_channel_id` | ✅ | string |  | ID of the Discord channel to post the message to |
+| `embed_title` | ✅ | string |  | Title of the embed |
+| `reaction_roles` | ✅ | []string |  | List of strings in format `emote=role-id` |
+| `embed_color` |  | int64 | `0x2ECC71` | Integer representation of the hex color for the embed |
+| `embed_description` |  | string |  | Description for the embed block |
+| `embed_thumbnail_height` |  | int64 |  | Height of the thumbnail |
+| `embed_thumbnail_url` |  | string |  | Publically hosted image URL to use as thumbnail |
+| `embed_thumbnail_width` |  | int64 |  | Width of the thumbnail |
+
 ## Type: `schedule`
 
 Posts stream schedule derived from Twitch schedule as embed in Discord channel
