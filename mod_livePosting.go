@@ -226,7 +226,9 @@ func (m modLivePosting) sendLivePost(username, displayName, title, game, preview
 	)
 
 	// @attr discord_channel_id required string "" ID of the Discord channel to post the message to
-	msgs, err := m.discord.ChannelMessages(m.attrs.MustString("discord_channel_id", nil), livePostingNumberOfMessagesToLoad, "", "", "")
+	channelID := m.attrs.MustString("discord_channel_id", nil)
+
+	msgs, err := m.discord.ChannelMessages(channelID, livePostingNumberOfMessagesToLoad, "", "", "")
 	if err != nil {
 		return errors.Wrap(err, "fetching previous messages")
 	}
@@ -282,10 +284,20 @@ func (m modLivePosting) sendLivePost(username, displayName, title, game, preview
 		URL:   strings.Join([]string{"https://www.twitch.tv", username}, "/"),
 	}
 
-	_, err = m.discord.ChannelMessageSendComplex(m.attrs.MustString("discord_channel_id", nil), &discordgo.MessageSend{
+	msg, err := m.discord.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 		Content: postText,
 		Embed:   msgEmbed,
 	})
+	if err != nil {
+		return errors.Wrap(err, "sending message")
+	}
 
-	return errors.Wrap(err, "sending message")
+	// @attr auto_publish optional bool "false" Automatically publish (crosspost) the message to followers of the channel
+	if m.attrs.MustBool("auto_publish", ptrBoolFalse) {
+		if _, err = m.discord.ChannelMessageCrosspost(channelID, msg.ID); err != nil {
+			return errors.Wrap(err, "publishing message")
+		}
+	}
+
+	return nil
 }
