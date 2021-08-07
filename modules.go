@@ -15,7 +15,8 @@ var (
 
 type (
 	module interface {
-		Initialize(crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error
+		ID() string
+		Initialize(id string, crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error
 		Setup() error
 	}
 

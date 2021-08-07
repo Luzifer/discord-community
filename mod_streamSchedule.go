@@ -34,11 +34,15 @@ func init() {
 type modStreamSchedule struct {
 	attrs   moduleAttributeStore
 	discord *discordgo.Session
+	id      string
 }
 
-func (m *modStreamSchedule) Initialize(crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
+func (m modStreamSchedule) ID() string { return m.id }
+
+func (m *modStreamSchedule) Initialize(id string, crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
 	m.attrs = attrs
 	m.discord = discord
+	m.id = id
 
 	if err := attrs.Expect(
 		"discord_channel_id",

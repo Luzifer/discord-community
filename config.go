@@ -13,13 +13,15 @@ import (
 
 type (
 	configFile struct {
-		BotToken string `yaml:"bot_token"`
-		GuildID  string `yaml:"guild_id"`
+		BotToken      string `yaml:"bot_token"`
+		GuildID       string `yaml:"guild_id"`
+		StoreLocation string `yaml:"store_location"`
 
 		ModuleConfigs []moduleConfig `yaml:"module_configs"`
 	}
 
 	moduleConfig struct {
+		ID         string               `yaml:"id"`
 		Type       string               `yaml:"type"`
 		Attributes moduleAttributeStore `yaml:"attributes"`
 	}

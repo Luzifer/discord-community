@@ -28,11 +28,15 @@ func init() {
 type modPresence struct {
 	attrs   moduleAttributeStore
 	discord *discordgo.Session
+	id      string
 }
 
-func (m *modPresence) Initialize(crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
+func (m modPresence) ID() string { return m.id }
+
+func (m *modPresence) Initialize(id string, crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
 	m.attrs = attrs
 	m.discord = discord
+	m.id = id
 
 	if err := attrs.Expect(
 		"fallback_text",

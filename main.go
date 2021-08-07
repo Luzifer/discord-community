@@ -23,6 +23,7 @@ var (
 	}{}
 
 	config *configFile
+	store  *metaStore
 
 	version = "dev"
 )
@@ -57,6 +58,14 @@ func main() {
 		log.WithError(err).Fatal("Unable to load config file")
 	}
 
+	if config.StoreLocation == "" {
+		log.Fatal("Config contains no store location")
+	}
+
+	if store, err = newMetaStoreFromDisk(config.StoreLocation); err != nil {
+		log.WithError(err).Fatal("Unable to load store")
+	}
+
 	// Connect to Discord
 	if discord, err = discordgo.New(strings.Join([]string{"Bot", config.BotToken}, " ")); err != nil {
 		log.WithError(err).Fatal("Unable to create discord client")
@@ -66,15 +75,22 @@ func main() {
 
 	for i, mc := range config.ModuleConfigs {
 		logger := log.WithFields(log.Fields{
+			"id":     mc.ID,
 			"idx":    i,
 			"module": mc.Type,
 		})
+
+		if mc.ID == "" {
+			logger.Error("Module contains no ID and will be disabled")
+			continue
+		}
+
 		mod := GetModuleByName(mc.Type)
 		if mod == nil {
 			logger.Fatal("Found configuration for unsupported module")
 		}
 
-		if err = mod.Initialize(crontab, discord, mc.Attributes); err != nil {
+		if err = mod.Initialize(mc.ID, crontab, discord, mc.Attributes); err != nil {
 			logger.WithError(err).Fatal("Unable to initialize module")
 		}
 
