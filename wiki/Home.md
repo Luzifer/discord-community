@@ -116,8 +116,8 @@ Creates a post with pre-set reactions and assigns roles on reaction
 | --------- | :--: | ---- | ------------- | ----------- |
 | `discord_channel_id` | ✅ | string |  | ID of the Discord channel to post the message to |
 | `embed_title` | ✅ | string |  | Title of the embed |
-| `reaction_roles` | ✅ | []string |  | List of strings in format `emote=role-id[:set]` (`✅=873653932478574632:set` = Emote ✅ to add role 873653932478574632 and prevent it to be removed again, `:thx:862322180896063489=873649098740342855` = Custom emote `:thx:` with corresponding ID to add role 873649098740342855) |
-| `embed_color` |  | int64 | `0x2ECC71` | Integer representation of the hex color for the embed |
+| `reaction_roles` | ✅ | []string |  | List of strings in format `emote=role-id[:set]` (`✅=873653932478574632:set` = Unicode-Emote ✅ to add role 873653932478574632 and prevent it to be removed again, `:thx:862322180896063489=873649098740342855` = Custom emote `:thx:` with corresponding ID to add role 873649098740342855) |
+| `embed_color` |  | int64 | `0x2ECC71` | Integer / HEX representation of the color for the embed |
 | `embed_description` |  | string |  | Description for the embed block |
 | `embed_thumbnail_height` |  | int64 |  | Height of the thumbnail |
 | `embed_thumbnail_url` |  | string |  | Publically hosted image URL to use as thumbnail |
@@ -135,7 +135,7 @@ Posts stream schedule derived from Twitch schedule as embed in Discord channel
 | `twitch_client_id` | ✅ | string |  | Twitch client ID the token was issued for |
 | `twitch_token` | ✅ | string |  | Token for the user the `twitch_channel_id` belongs to |
 | `cron` |  | string | `*/10 * * * *` | When to execute the schedule transfer |
-| `embed_color` |  | int64 | `0x2ECC71` | Integer representation of the hex color for the embed |
+| `embed_color` |  | int64 | `0x2ECC71` | Integer / HEX representation of the color for the embed |
 | `embed_description` |  | string |  | Description for the embed block |
 | `embed_thumbnail_height` |  | int64 |  | Height of the thumbnail |
 | `embed_thumbnail_url` |  | string |  | Publically hosted image URL to use as thumbnail |

@@ -88,7 +88,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 	channelID := m.attrs.MustString("discord_channel_id", nil)
 
 	msgEmbed := &discordgo.MessageEmbed{
-		// @attr embed_color optional int64 "0x2ECC71" Integer representation of the hex color for the embed
+		// @attr embed_color optional int64 "0x2ECC71" Integer / HEX representation of the color for the embed
 		Color: int(m.attrs.MustInt64("embed_color", ptrInt64(streamScheduleDefaultColor))),
 		// @attr embed_description optional string "" Description for the embed block
 		Description: strings.TrimSpace(m.attrs.MustString("embed_description", ptrStringEmpty)),
