@@ -42,9 +42,11 @@
 
 bot_token: '...'
 guild_id: '...'
+store_location: /path/to/storage.json
 
 module_configs:
-  - type: module-type
+  - id: unique id for the module instance
+    type: module-type
     attributes:
       key: value
 
