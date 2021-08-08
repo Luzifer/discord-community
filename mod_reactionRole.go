@@ -133,7 +133,12 @@ func (m modReactionRole) Setup() error {
 		okCode := str.StringInSlice(compiledName, reactionList)
 
 		if !okCode && !okName {
-			if err = m.discord.MessageReactionsRemoveEmoji(channelID, managedMsg.ID, r.Emoji.ID); err != nil {
+			id := r.Emoji.ID
+			if id == "" {
+				id = r.Emoji.Name
+			}
+
+			if err = m.discord.MessageReactionsRemoveEmoji(channelID, managedMsg.ID, id); err != nil {
 				return errors.Wrap(err, "removing reaction emoji")
 			}
 			continue
