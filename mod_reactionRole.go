@@ -55,6 +55,9 @@ func (m modReactionRole) Setup() error {
 	// @attr discord_channel_id required string "" ID of the Discord channel to post the message to
 	channelID := m.attrs.MustString("discord_channel_id", nil)
 
+	// @attr content optional string "" Message content to post above the embed
+	contentString := m.attrs.MustString("content", ptrStringEmpty)
+
 	msgEmbed := &discordgo.MessageEmbed{
 		// @attr embed_color optional int64 "0x2ECC71" Integer / HEX representation of the color for the embed
 		Color: int(m.attrs.MustInt64("embed_color", ptrInt64(streamScheduleDefaultColor))),
@@ -100,9 +103,18 @@ func (m modReactionRole) Setup() error {
 	}
 
 	if managedMsg == nil {
-		managedMsg, err = m.discord.ChannelMessageSendEmbed(channelID, msgEmbed)
-	} else if !isDiscordMessageEmbedEqual(managedMsg.Embeds[0], msgEmbed) {
-		_, err = m.discord.ChannelMessageEditEmbed(channelID, managedMsg.ID, msgEmbed)
+		managedMsg, err = m.discord.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+			Content: contentString,
+			Embed:   msgEmbed,
+		})
+	} else if !isDiscordMessageEmbedEqual(managedMsg.Embeds[0], msgEmbed) || managedMsg.Content != contentString {
+		_, err = m.discord.ChannelMessageEditComplex(&discordgo.MessageEdit{
+			Content: &contentString,
+			Embed:   msgEmbed,
+
+			ID:      managedMsg.ID,
+			Channel: channelID,
+		})
 	}
 	if err != nil {
 		return errors.Wrap(err, "updating / creating message")
