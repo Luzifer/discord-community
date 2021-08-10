@@ -85,6 +85,10 @@ func (m modPresence) cronUpdatePresence() {
 			continue
 		}
 
+		if seg.StartTime.Before(time.Now()) {
+			continue
+		}
+
 		nextStream = seg.StartTime
 		break
 	}
