@@ -18,6 +18,7 @@ func ptrInt64(v int64) *int64                    { return &v }
 func ptrString(v string) *string                 { return &v }
 func ptrTime(v time.Time) *time.Time             { return &v }
 
+//nolint:gocognit,gocyclo // This function compares two structs and needs the complexity
 func isDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 	checks := [][2]interface{}{
 		// Base-Struct

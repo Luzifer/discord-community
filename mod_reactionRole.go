@@ -49,6 +49,7 @@ func (m *modReactionRole) Initialize(id string, crontab *cron.Cron, discord *dis
 	return nil
 }
 
+//nolint:funlen,gocyclo // Single task, seeing no sense in splitting
 func (m modReactionRole) Setup() error {
 	var err error
 

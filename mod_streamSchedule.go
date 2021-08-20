@@ -63,6 +63,7 @@ func (m *modStreamSchedule) Initialize(id string, crontab *cron.Cron, discord *d
 
 func (m modStreamSchedule) Setup() error { return nil }
 
+//nolint:funlen // Seeing no sense to split for 5 lines
 func (m modStreamSchedule) cronUpdateSchedule() {
 	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
