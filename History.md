@@ -1,3 +1,12 @@
+# 0.4.0 / 2021-08-21
+
+  * Sec: Use app-access-token instead of user-token for schedule fetching
+  * Add reactionrole module. handle optional thumbnail in streamschedule better
+  * Instead of scanning for message, use store to save its ID
+  * [module/liveposting] Add auto\_publish functionality
+  * Add persistent store and module IDs
+  * Add setup method to execute actions after connect
+
 # 0.3.1 / 2021-08-06
 
   * Fix: Do not break posting on one non-fresh stream
