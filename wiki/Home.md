@@ -134,7 +134,7 @@ Posts stream schedule derived from Twitch schedule as embed in Discord channel
 | `embed_title` | ✅ | string |  | Title of the embed |
 | `twitch_channel_id` | ✅ | string |  | ID (not name) of the channel to fetch the schedule from |
 | `twitch_client_id` | ✅ | string |  | Twitch client ID the token was issued for |
-| `twitch_token` | ✅ | string |  | Token for the user the `twitch_channel_id` belongs to |
+| `twitch_client_secret` | ✅ | string |  | Secret for the Twitch app identified with twitch_client_id |
 | `cron` |  | string | `*/10 * * * *` | When to execute the schedule transfer |
 | `embed_color` |  | int64 | `0x2ECC71` | Integer / HEX representation of the color for the embed |
 | `embed_description` |  | string |  | Description for the embed block |
