@@ -42,7 +42,7 @@ func (m *modPresence) Initialize(id string, crontab *cron.Cron, discord *discord
 		"fallback_text",
 		"twitch_channel_id",
 		"twitch_client_id",
-		"twitch_token",
+		"twitch_client_secret",
 	); err != nil {
 		return errors.Wrap(err, "validating attributes")
 	}
@@ -63,9 +63,9 @@ func (m modPresence) cronUpdatePresence() {
 	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
 		m.attrs.MustString("twitch_client_id", nil),
-		"", // No client secret used
-		// @attr twitch_token required string "" Token for the user the `twitch_channel_id` belongs to
-		m.attrs.MustString("twitch_token", nil),
+		// @attr twitch_client_secret required string "" Secret for the Twitch app identified with twitch_client_id
+		m.attrs.MustString("twitch_client_secret", nil),
+		"", // No User-Token used
 	)
 
 	data, err := twitch.GetChannelStreamSchedule(
