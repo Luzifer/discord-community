@@ -1,3 +1,9 @@
+# 0.5.0 / 2021-08-23
+
+  * Switch presence module to app-access-token
+  * Fix: Log setup finish to give user a clue the bot is ready
+  * Fix: Handle empty store-file created for permission management
+
 # 0.4.0 / 2021-08-21
 
   * Sec: Use app-access-token instead of user-token for schedule fetching
