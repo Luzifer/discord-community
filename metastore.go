@@ -21,7 +21,7 @@ func newMetaStoreFromDisk(filename string) (*metaStore, error) {
 		filename:         filename,
 	}
 
-	f, err := os.Open(filename)
+	s, err := os.Stat(filename)
 	switch {
 	case err == nil:
 		// This is fine
@@ -31,6 +31,21 @@ func newMetaStoreFromDisk(filename string) (*metaStore, error) {
 		return out, nil
 
 	default:
+		return nil, errors.Wrap(err, "getting file stats for store")
+	}
+
+	if s.IsDir() {
+		// A directory was provided
+		return nil, errors.New("store location is directory")
+	}
+
+	if s.Size() == 0 {
+		// An empty file was created, we don't care and will overwrite on save
+		return out, nil
+	}
+
+	f, err := os.Open(filename)
+	if err != nil {
 		return nil, errors.Wrap(err, "opening store")
 	}
 	defer f.Close()
