@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Luzifer/go_helpers/v2/str"
@@ -37,9 +38,11 @@ type modLivePosting struct {
 	attrs   moduleAttributeStore
 	discord *discordgo.Session
 	id      string
+
+	lock sync.Mutex
 }
 
-func (m modLivePosting) ID() string { return m.id }
+func (m *modLivePosting) ID() string { return m.id }
 
 func (m *modLivePosting) Initialize(id string, crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
 	m.attrs = attrs
@@ -70,9 +73,9 @@ func (m *modLivePosting) Initialize(id string, crontab *cron.Cron, discord *disc
 	return nil
 }
 
-func (m modLivePosting) Setup() error { return nil }
+func (m *modLivePosting) Setup() error { return nil }
 
-func (m modLivePosting) cronFetchChannelStatus() {
+func (m *modLivePosting) cronFetchChannelStatus() {
 	// @attr poll_usernames optional []string "[]" Check these usernames for active streams when executing the `cron` (at most 100 users can be checked)
 	usernames, err := m.attrs.StringSlice("poll_usernames")
 	switch err {
@@ -93,7 +96,7 @@ func (m modLivePosting) cronFetchChannelStatus() {
 	}
 }
 
-func (m modLivePosting) fetchAndPostForUsername(usernames ...string) error {
+func (m *modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
 		m.attrs.MustString("twitch_client_id", nil),
@@ -155,7 +158,7 @@ func (m modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 	return nil
 }
 
-func (m modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.PresenceUpdate) {
+func (m *modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.PresenceUpdate) {
 	if p.User == nil {
 		// The frick? Non-user presence?
 		return
@@ -216,7 +219,10 @@ func (m modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo.
 	}
 }
 
-func (m modLivePosting) sendLivePost(username, displayName, title, game, previewImage, profileImage string) error {
+func (m *modLivePosting) sendLivePost(username, displayName, title, game, previewImage, profileImage string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	postText := strings.NewReplacer(
 		"${displayname}", displayName,
 		"${username}", username,
