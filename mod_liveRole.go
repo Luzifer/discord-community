@@ -50,7 +50,7 @@ func (m *modLiveRole) Initialize(id string, crontab *cron.Cron, discord *discord
 func (m modLiveRole) Setup() error { return nil }
 
 func (m modLiveRole) addLiveStreamerRole(guildID, userID string, presentRoles []string) error {
-	// @attr role_streamers_live required string "" Role ID to assign to live streamers
+	// @attr role_streamers_live required string "" Role ID to assign to live streamers (make sure the bot [can assign](https://support.discord.com/hc/en-us/articles/214836687-Role-Management-101) this role)
 	roleID := m.attrs.MustString("role_streamers_live", nil)
 	if roleID == "" {
 		return errors.New("empty live-role-id")

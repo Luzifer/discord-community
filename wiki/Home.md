@@ -90,7 +90,7 @@ Adds live-role to certain group of users if they are streaming on Twitch
 
 | Attribute | Req. | Type | Default Value | Description |
 | --------- | :--: | ---- | ------------- | ----------- |
-| `role_streamers_live` | ✅ | string |  | Role ID to assign to live streamers |
+| `role_streamers_live` | ✅ | string |  | Role ID to assign to live streamers (make sure the bot [can assign](https://support.discord.com/hc/en-us/articles/214836687-Role-Management-101) this role) |
 | `twitch_client_id` | ✅ | string |  | Twitch client ID the token was issued for |
 | `twitch_client_secret` | ✅ | string |  | Secret for the Twitch app identified with twitch_client_id |
 | `role_streamers` |  | string |  | Only take members with this role ID into account |
