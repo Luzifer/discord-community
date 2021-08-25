@@ -1,3 +1,7 @@
+# 0.6.1 / 2021-08-26
+
+  * Fix: Add reason, move role change to debug level
+
 # 0.6.0 / 2021-08-26
 
   * Fix: Log version of bot currently started
