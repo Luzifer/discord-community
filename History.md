@@ -1,3 +1,11 @@
+# 0.6.0 / 2021-08-26
+
+  * Fix: Log version of bot currently started
+  * Add logging for successful role change
+  * Fix: Prevent activating duplicate module ID
+  * Wiki: Document role hierarchy
+  * Fix: Lock live-posts to prevent double posting
+
 # 0.5.0 / 2021-08-23
 
   * Switch presence module to app-access-token
