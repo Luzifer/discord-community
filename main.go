@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	httpHelpers "github.com/Luzifer/go_helpers/v2/http"
+	"github.com/Luzifer/go_helpers/v2/str"
 	"github.com/Luzifer/rconfig/v2"
 )
 
@@ -73,12 +74,18 @@ func main() {
 
 	discord.Identify.Intents = discordgo.IntentsAll
 
+	var activeIDs []string
 	for i, mc := range config.ModuleConfigs {
 		logger := log.WithFields(log.Fields{
 			"id":     mc.ID,
 			"idx":    i,
 			"module": mc.Type,
 		})
+
+		if str.StringInSlice(mc.ID, activeIDs) {
+			logger.Error("Found duplicate module ID, module will be disabled")
+			continue
+		}
 
 		if mc.ID == "" {
 			logger.Error("Module contains no ID and will be disabled")
@@ -95,6 +102,7 @@ func main() {
 		}
 
 		activeModules = append(activeModules, mod)
+		activeIDs = append(activeIDs, mc.ID)
 
 		logger.Debug("Enabled module")
 	}
