@@ -135,7 +135,7 @@ func main() {
 	h = httpHelpers.GzipHandler(h)
 	h = httpHelpers.NewHTTPLogHandler(h)
 
-	log.Info("Bot setup done, bot is now running")
+	log.WithField("version", version).Info("Bot setup done, bot is now running")
 
 	http.ListenAndServe(cfg.Listen, h)
 }
