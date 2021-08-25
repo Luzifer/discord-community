@@ -100,7 +100,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 			if err := exitFunc(p.GuildID, p.User.ID, member.Roles); err != nil {
 				logger.WithError(err).Error("Unable to update live-streamer-role")
 			}
-			logger.Info("Updated live-streamer-role")
+			logger.Debug("Updated live-streamer-role")
 		}
 	}()
 
@@ -116,7 +116,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	if activity == nil {
 		// No streaming activity: Remove role
 		exitFunc = m.removeLiveStreamerRole
-		logger = logger.WithField("action", "remove")
+		logger = logger.WithFields(log.Fields{"action": "remove", "reason": "no activity"})
 		return
 	}
 
@@ -124,14 +124,14 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	if err != nil {
 		logger.WithError(err).WithField("url", activity.URL).Warning("Unable to parse activity URL")
 		exitFunc = m.removeLiveStreamerRole
-		logger = logger.WithField("action", "remove")
+		logger = logger.WithFields(log.Fields{"action": "remove", "reason": "broken activity URL"})
 		return
 	}
 
 	if u.Host != "www.twitch.tv" {
 		logger.WithError(err).WithField("url", activity.URL).Warning("Activity is not on Twitch")
 		exitFunc = m.removeLiveStreamerRole
-		logger = logger.WithField("action", "remove")
+		logger = logger.WithFields(log.Fields{"action": "remove", "reason": "activity not on twitch"})
 		return
 	}
 
@@ -147,13 +147,13 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	if err != nil {
 		logger.WithError(err).WithField("user", strings.TrimLeft(u.Path, "/")).Warning("Unable to fetch streams for user")
 		exitFunc = m.removeLiveStreamerRole
-		logger = logger.WithField("action", "remove")
+		logger = logger.WithFields(log.Fields{"action": "remove", "reason": "error in getting streams"})
 		return
 	}
 
 	if len(streams.Data) > 0 {
 		exitFunc = m.addLiveStreamerRole
-		logger = logger.WithField("action", "add")
+		logger = logger.WithFields(log.Fields{"action": "add", "reason": "stream found"})
 	}
 }
 
