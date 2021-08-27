@@ -118,6 +118,12 @@ func main() {
 	defer discord.Close()
 	log.Debug("Discord connected")
 
+	guild, err := discord.Guild(config.GuildID)
+	if err != nil {
+		log.WithError(err).Fatal("Unable to get guild for given guild-id in config")
+	}
+	log.WithField("name", guild.Name).Info("Found specified guild for operation")
+
 	// Run Crontab
 	crontab.Start()
 	defer crontab.Stop()
