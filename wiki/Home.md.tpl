@@ -40,12 +40,15 @@
 ```yaml
 ---
 
-bot_token: '...'  # See documentation above
-guild_id: '...'   # ID of your Discord "server" (internally named "guild")
+# See documentation above
+bot_token: '...'
+# ID of your Discord "server" (internally named "guild")
+guild_id: '...'
+# File location to store a persistent state for the modules
 store_location: /path/to/storage.json
 
 module_configs:
-  - id: unique id for the module instance
+  - id: 'unique id for the module instance (e.g. UUID)'
     type: module-type
     attributes:
       key: value
