@@ -40,8 +40,8 @@
 ```yaml
 ---
 
-bot_token: '...'
-guild_id: '...'
+bot_token: '...'  # See documentation above
+guild_id: '...'   # ID of your Discord "server" (internally named "guild")
 store_location: /path/to/storage.json
 
 module_configs:
