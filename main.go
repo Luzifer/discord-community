@@ -120,7 +120,7 @@ func main() {
 
 	guild, err := discord.Guild(config.GuildID)
 	if err != nil {
-		log.WithError(err).Fatal("Unable to get guild for given guild-id in config")
+		log.WithError(err).Fatal("Unable to get guild for given guild-id in config: Is the bot added and the ID correct?")
 	}
 	log.WithField("name", guild.Name).Info("Found specified guild for operation")
 
