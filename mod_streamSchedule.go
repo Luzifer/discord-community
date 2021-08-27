@@ -173,7 +173,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 }
 
 func (m modStreamSchedule) formatTime(t time.Time) string {
-	// @attr timezone optional string "UTC" Timezone to display the times in (e.g. "Europe/Berlin")
+	// @attr timezone optional string "UTC" Timezone to display the times in (e.g. `Europe/Berlin`)
 	tz, err := time.LoadLocation(m.attrs.MustString("timezone", ptrString("UTC")))
 	if err != nil {
 		log.WithError(err).Fatal("Unable to load timezone")
@@ -181,7 +181,7 @@ func (m modStreamSchedule) formatTime(t time.Time) string {
 
 	return localeStrftime(
 		t.In(tz),
-		// @attr time_format optional string "%b %d, %Y %I:%M %p" Time format in [limited strftime format](https://github.com/Luzifer/discord-community/blob/master/strftime.go) to use (e.g. "%a. %d.%m. %H:%M Uhr")
+		// @attr time_format optional string "%b %d, %Y %I:%M %p" Time format in [limited strftime format](https://github.com/Luzifer/discord-community/blob/master/strftime.go) to use (e.g. `%a. %d.%m. %H:%M Uhr`)
 		m.attrs.MustString("time_format", ptrString("%b %d, %Y %I:%M %p")),
 		// @attr locale optional string "en_US" Locale to translate the date to ([supported locales](https://github.com/goodsign/monday/blob/24c0b92f25dca51152defe82cefc7f7fc1c92009/locale.go#L9-L49))
 		m.attrs.MustString("locale", ptrString("en_US")),
