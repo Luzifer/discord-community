@@ -25,8 +25,8 @@ const (
 	livePostingDiscordProfileHeight   = 300
 	livePostingDiscordProfileWidth    = 300
 	livePostingNumberOfMessagesToLoad = 100
-	livePostingPreviewHeight          = 180
-	livePostingPreviewWidth           = 320
+	livePostingPreviewHeight          = 720
+	livePostingPreviewWidth           = 1280
 	livePostingTwitchColor            = 0x6441a5
 )
 
