@@ -1,3 +1,12 @@
+# 0.7.0 / 2021-08-28
+
+  * [livePosting] Increase preview size
+  * Wiki: Improve examples with code tags
+  * [streamSchedule] Support dynamic date specification
+  * Wiki: Add more documentation for config parameters
+  * Add info about the guild\_id
+  * Add check for given guild ID
+
 # 0.6.1 / 2021-08-26
 
   * Fix: Add reason, move role change to debug level
