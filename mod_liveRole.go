@@ -78,6 +78,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	}
 
 	logger := log.WithFields(log.Fields{
+		"name": p.User.Username,
 		"user": p.User.ID,
 	})
 
