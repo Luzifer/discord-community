@@ -77,16 +77,15 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		return
 	}
 
-	logger := log.WithFields(log.Fields{
-		"name": p.User.Username,
-		"user": p.User.ID,
-	})
+	logger := log.WithField("user", p.User.ID)
 
 	member, err := d.GuildMember(p.GuildID, p.User.ID)
 	if err != nil {
 		logger.WithError(err).Error("Unable to fetch member status for user")
 		return
 	}
+
+	logger = logger.WithField("name", member.User.String())
 
 	// @attr role_streamers optional string "" Only take members with this role ID into account
 	roleStreamer := m.attrs.MustString("role_streamers", ptrStringEmpty)
