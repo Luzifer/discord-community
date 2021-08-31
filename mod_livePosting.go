@@ -223,6 +223,11 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	logger := log.WithFields(log.Fields{
+		"user": username,
+		"game": game,
+	})
+
 	postText := strings.NewReplacer(
 		"${displayname}", displayName,
 		"${username}", username,
@@ -246,6 +251,7 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 			return errors.Wrap(err, "parsing message timestamp")
 		}
 		if msg.Content == postText && time.Since(mt) < ignoreTime {
+			logger.Debug("Not creating live-post, it's already there")
 			return nil
 		}
 	}
@@ -290,6 +296,8 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 		URL:   strings.Join([]string{"https://www.twitch.tv", username}, "/"),
 	}
 
+	logger.Debug("Creating live-post")
+
 	msg, err := m.discord.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 		Content: postText,
 		Embed:   msgEmbed,
@@ -300,6 +308,7 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 
 	// @attr auto_publish optional bool "false" Automatically publish (crosspost) the message to followers of the channel
 	if m.attrs.MustBool("auto_publish", ptrBoolFalse) {
+		logger.Debug("Auto-Publishing live-post")
 		if _, err = m.discord.ChannelMessageCrosspost(channelID, msg.ID); err != nil {
 			return errors.Wrap(err, "publishing message")
 		}
