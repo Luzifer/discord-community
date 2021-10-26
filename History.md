@@ -1,3 +1,10 @@
+# 0.8.0 / 2021-10-26
+
+  * [liveposting] Add support for preserve-proxy for stream previews
+  * [liveposting] Add some debug logging to post creation
+  * [liverole] Fix: Take username from member information
+  * [liverole] Log username for add / remove decisions
+
 # 0.7.0 / 2021-08-28
 
   * [livePosting] Increase preview size
