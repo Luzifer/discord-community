@@ -272,6 +272,12 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 	previewImageQuery.Add("_discordNoCache", time.Now().Format(time.RFC3339))
 	previewImageURL.RawQuery = previewImageQuery.Encode()
 
+	// @attr preserve_proxy optional string "" URL prefix of a Luzifer/preserve proxy to cache stream preview for longer
+	if proxy, err := url.Parse(m.attrs.MustString("preserve_proxy", ptrStringEmpty)); err == nil && proxy.String() != "" {
+		proxy.Path = "/" + previewImageURL.String()
+		previewImageURL = proxy
+	}
+
 	msgEmbed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    displayName,

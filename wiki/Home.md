@@ -84,6 +84,7 @@ Announces stream live status based on Discord streaming status
 | `cron` |  | string | `*/5 * * * *` | Fetch live status of `poll_usernames` (set to empty string to disable): keep this below `stream_freshness` or you might miss streams |
 | `disable_presence` |  | bool | `false` | Disable posting live-postings for discord presence changes |
 | `poll_usernames` |  | []string | `[]` | Check these usernames for active streams when executing the `cron` (at most 100 users can be checked) |
+| `preserve_proxy` |  | string |  | URL prefix of a Luzifer/preserve proxy to cache stream preview for longer |
 | `stream_freshness` |  | duration | `5m` | How long after stream start to post shoutout |
 | `whitelisted_role` |  | string |  | Only post for members of this role ID |
 
