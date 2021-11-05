@@ -1,3 +1,8 @@
+# 0.9.0 / 2021-11-05
+
+  * [core] Update dependencies, switch to go1.17 go.mod format
+  * [liveposting] Fix: Work around Discord screwing up image URLs
+
 # 0.8.0 / 2021-10-26
 
   * [liveposting] Add support for preserve-proxy for stream previews
