@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"net/url"
 	"strconv"
 	"strings"
@@ -274,7 +275,8 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 
 	// @attr preserve_proxy optional string "" URL prefix of a Luzifer/preserve proxy to cache stream preview for longer
 	if proxy, err := url.Parse(m.attrs.MustString("preserve_proxy", ptrStringEmpty)); err == nil && proxy.String() != "" {
-		proxy.Path = "/" + previewImageURL.String()
+		// Discord screws up the plain-text URL format, so we need to use the b64-format
+		proxy.Path = "/b64:" + base64.URLEncoding.EncodeToString([]byte(previewImageURL.String()))
 		previewImageURL = proxy
 	}
 
