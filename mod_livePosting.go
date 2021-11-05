@@ -220,6 +220,7 @@ func (m *modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo
 	}
 }
 
+//nolint:funlen // Makes no sense to split just for 2 lines
 func (m *modLivePosting) sendLivePost(username, displayName, title, game, previewImage, profileImage string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
