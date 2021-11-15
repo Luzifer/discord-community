@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -230,12 +231,15 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 		"game": game,
 	})
 
+	// @attr post_text required string "" Message to post to channel use `${displayname}` and `${username}` as placeholders
+	postTemplateDefault := m.attrs.MustString("post_text", nil)
+
 	postText := strings.NewReplacer(
 		"${displayname}", displayName,
 		"${username}", username,
 	).Replace(
-		// @attr post_text required string "" Message to post to channel use `${displayname}` and `${username}` as placeholders
-		m.attrs.MustString("post_text", nil),
+		// @attr post_text_{username} optional string "" Override the default `post_text` with this one (e.g. `post_text_luziferus: "${displayName} is now live"`)
+		m.attrs.MustString(fmt.Sprintf("post_text_%s", strings.ToLower(username)), &postTemplateDefault),
 	)
 
 	// @attr discord_channel_id required string "" ID of the Discord channel to post the message to
