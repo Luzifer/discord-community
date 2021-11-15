@@ -252,9 +252,27 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 		if err != nil {
 			return errors.Wrap(err, "parsing message timestamp")
 		}
-		if msg.Content == postText && time.Since(mt) < ignoreTime {
+
+		if msg.Content != postText {
+			// Post is for another channel / is another message
+			continue
+		}
+
+		if time.Since(mt) < ignoreTime {
+			// Message is still fresh
 			logger.Debug("Not creating live-post, it's already there")
 			return nil
+		}
+
+		// @attr remove_old optional bool "false" If set to `true` older message with same content will be deleted
+		if !m.attrs.MustBool("remove_old", ptrBoolFalse) {
+			// We're not allowed to purge the old message
+			continue
+		}
+
+		// Purge the old message
+		if err = m.discord.ChannelMessageDelete(channelID, msg.ID); err != nil {
+			return errors.Wrap(err, "deleting old message")
 		}
 	}
 
