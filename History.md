@@ -1,3 +1,8 @@
+# 0.10.0 / 2021-11-16
+
+  * [liveposting] Add option to remove older messages for the same channel
+  * [liveposting] Allow to override the post text for specific users
+
 # 0.9.0 / 2021-11-05
 
   * [core] Update dependencies, switch to go1.17 go.mod format
