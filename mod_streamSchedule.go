@@ -113,7 +113,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 
 	for _, seg := range data.Data.Segments {
 		title := seg.Title
-		if seg.Category != nil && seg.Category.Name != seg.Title {
+		if seg.Category != nil && !strings.Contains(seg.Title, seg.Category.Name) {
 			title = fmt.Sprintf("%s (%s)", seg.Title, seg.Category.Name)
 		}
 
