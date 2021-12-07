@@ -1,3 +1,7 @@
+# 0.11.0 / 2021-12-07
+
+  * [streamSchedule] Fix: To not append game name if title contains it
+
 # 0.10.0 / 2021-11-16
 
   * [liveposting] Add option to remove older messages for the same channel
