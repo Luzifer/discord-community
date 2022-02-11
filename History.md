@@ -1,3 +1,7 @@
+# 0.11.1 / 2022-02-11
+
+  * Update dependencies
+
 # 0.11.0 / 2021-12-07
 
   * [streamSchedule] Fix: To not append game name if title contains it
