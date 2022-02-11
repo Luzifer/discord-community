@@ -1,3 +1,7 @@
+# 0.12.1 / 2022-02-11
+
+  * Lint: Disable gocyclo triggered by switch statement
+
 # 0.12.0 / 2022-02-11
 
   * [streamSchedule] Improve display for empty stream title
