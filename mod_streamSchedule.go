@@ -113,11 +113,21 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 
 	for _, seg := range data.Data.Segments {
 		title := seg.Title
-		if seg.Category != nil && !strings.Contains(seg.Title, seg.Category.Name) {
-			title = fmt.Sprintf("%s (%s)", seg.Title, seg.Category.Name)
-		}
+		switch {
+		case seg.StartTime == nil || seg.CanceledUntil != nil:
+			// No start-time: We skip this entry
+			continue
 
-		if seg.StartTime == nil || seg.CanceledUntil != nil {
+		case seg.Category != nil && seg.Title == "":
+			// No title but category set: use category as title
+			title = seg.Category.Name
+
+		case seg.Category != nil && !strings.Contains(seg.Title, seg.Category.Name):
+			// Title and category set but category not part of title: Add it in braces
+			title = fmt.Sprintf("%s (%s)", seg.Title, seg.Category.Name)
+
+		case seg.Category == nil && seg.Title == "":
+			// Unnamed stream without category: don't display empty field
 			continue
 		}
 
