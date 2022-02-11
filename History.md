@@ -1,3 +1,7 @@
+# 0.12.0 / 2022-02-11
+
+  * [streamSchedule] Improve display for empty stream title
+
 # 0.11.1 / 2022-02-11
 
   * Update dependencies
