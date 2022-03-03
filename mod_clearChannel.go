@@ -5,11 +5,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Luzifer/go_helpers/v2/str"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/Luzifer/go_helpers/v2/str"
 )
 
 /*
@@ -106,13 +107,7 @@ func (m modClearChannel) cronClearChannel() {
 		}
 
 		for _, msg := range msgs {
-			mt, err := msg.Timestamp.Parse()
-			if err != nil {
-				log.WithField("msg_id", msg.ID).WithError(err).Error("Unable to parse message timestamp")
-				break
-			}
-
-			if time.Since(mt) < retention {
+			if time.Since(msg.Timestamp) < retention {
 				// We got to the first message within the retention time, we can end now
 				break
 			}

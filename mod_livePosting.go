@@ -10,11 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Luzifer/go_helpers/v2/str"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/Luzifer/go_helpers/v2/str"
 )
 
 /*
@@ -252,17 +253,12 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 
 	ignoreTime := m.attrs.MustDuration("stream_freshness", ptrDuration(livePostingDefaultStreamFreshness))
 	for _, msg := range msgs {
-		mt, err := msg.Timestamp.Parse()
-		if err != nil {
-			return errors.Wrap(err, "parsing message timestamp")
-		}
-
 		if msg.Content != postText {
 			// Post is for another channel / is another message
 			continue
 		}
 
-		if time.Since(mt) < ignoreTime {
+		if time.Since(msg.Timestamp) < ignoreTime {
 			// Message is still fresh
 			logger.Debug("Not creating live-post, it's already there")
 			return nil
