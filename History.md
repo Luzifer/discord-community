@@ -1,3 +1,7 @@
+# 0.12.2 / 2022-03-03
+
+  * Update dependencies
+
 # 0.12.1 / 2022-02-11
 
   * Lint: Disable gocyclo triggered by switch statement
