@@ -1,3 +1,7 @@
+# 0.12.3 / 2022-03-04
+
+  * Fix: Trim spaces in title as Discord does
+
 # 0.12.2 / 2022-03-03
 
   * Update dependencies
