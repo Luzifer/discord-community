@@ -133,7 +133,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 
 		msgEmbed.Fields = append(msgEmbed.Fields, &discordgo.MessageEmbedField{
 			Name:   m.formatTime(*seg.StartTime),
-			Value:  title,
+			Value:  strings.TrimSpace(title),
 			Inline: false,
 		})
 
