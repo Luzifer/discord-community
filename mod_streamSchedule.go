@@ -213,7 +213,7 @@ func (m modStreamSchedule) assembleEmbed(data *twitchStreamSchedule) *discordgo.
 
 func (m modStreamSchedule) executeContentTemplate(data *twitchStreamSchedule) (string, error) {
 	fns := sprig.FuncMap()
-	fns["localeStrftime"] = localeStrftime
+	fns["formatTime"] = m.formatTime
 
 	tpl, err := template.New("streamschedule").
 		Funcs(fns).
