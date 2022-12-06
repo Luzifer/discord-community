@@ -38,7 +38,6 @@ func (m *modReactionRole) Initialize(id string, crontab *cron.Cron, discord *dis
 
 	if err := attrs.Expect(
 		"discord_channel_id",
-		"embed_title",
 		"reaction_roles",
 	); err != nil {
 		return errors.Wrap(err, "validating attributes")
