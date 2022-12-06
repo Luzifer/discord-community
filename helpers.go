@@ -20,6 +20,11 @@ func ptrTime(v time.Time) *time.Time             { return &v }
 
 //nolint:gocognit,gocyclo // This function compares two structs and needs the complexity
 func isDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
+	if a == nil || b == nil {
+		// If one of them is nil, don't do the in-depth analysis
+		return a == b
+	}
+
 	checks := [][2]interface{}{
 		// Base-Struct
 		{a.Type, b.Type},

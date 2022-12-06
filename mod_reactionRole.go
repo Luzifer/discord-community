@@ -5,12 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Luzifer/go_helpers/v2/env"
-	"github.com/Luzifer/go_helpers/v2/str"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/Luzifer/go_helpers/v2/env"
+	"github.com/Luzifer/go_helpers/v2/str"
 )
 
 /*
@@ -59,25 +60,28 @@ func (m modReactionRole) Setup() error {
 	// @attr content optional string "" Message content to post above the embed
 	contentString := m.attrs.MustString("content", ptrStringEmpty)
 
-	msgEmbed := &discordgo.MessageEmbed{
-		// @attr embed_color optional int64 "0x2ECC71" Integer / HEX representation of the color for the embed
-		Color: int(m.attrs.MustInt64("embed_color", ptrInt64(streamScheduleDefaultColor))),
-		// @attr embed_description optional string "" Description for the embed block
-		Description: strings.TrimSpace(m.attrs.MustString("embed_description", ptrStringEmpty)),
-		Timestamp:   time.Now().Format(time.RFC3339),
-		// @attr embed_title required string "" Title of the embed
-		Title: m.attrs.MustString("embed_title", nil),
-		Type:  discordgo.EmbedTypeRich,
-	}
+	var msgEmbed *discordgo.MessageEmbed
+	// @attr embed_title optional string "" Title of the embed (embed will not be added when title is missing)
+	if title := m.attrs.MustString("embed_title", ptrStringEmpty); title != "" {
+		msgEmbed = &discordgo.MessageEmbed{
+			// @attr embed_color optional int64 "0x2ECC71" Integer / HEX representation of the color for the embed
+			Color: int(m.attrs.MustInt64("embed_color", ptrInt64(streamScheduleDefaultColor))),
+			// @attr embed_description optional string "" Description for the embed block
+			Description: strings.TrimSpace(m.attrs.MustString("embed_description", ptrStringEmpty)),
+			Timestamp:   time.Now().Format(time.RFC3339),
+			Title:       title,
+			Type:        discordgo.EmbedTypeRich,
+		}
 
-	if m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty) != "" {
-		msgEmbed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-			// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
-			URL: m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty),
-			// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
-			Width: int(m.attrs.MustInt64("embed_thumbnail_width", ptrInt64Zero)),
-			// @attr embed_thumbnail_height optional int64 "" Height of the thumbnail
-			Height: int(m.attrs.MustInt64("embed_thumbnail_height", ptrInt64Zero)),
+		if m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty) != "" {
+			msgEmbed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+				// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
+				URL: m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty),
+				// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
+				Width: int(m.attrs.MustInt64("embed_thumbnail_width", ptrInt64Zero)),
+				// @attr embed_thumbnail_height optional int64 "" Height of the thumbnail
+				Height: int(m.attrs.MustInt64("embed_thumbnail_height", ptrInt64Zero)),
+			}
 		}
 	}
 
