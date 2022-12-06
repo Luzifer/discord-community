@@ -111,7 +111,7 @@ func (m modReactionRole) Setup() error {
 			Content: contentString,
 			Embed:   msgEmbed,
 		})
-	} else if !isDiscordMessageEmbedEqual(managedMsg.Embeds[0], msgEmbed) || managedMsg.Content != contentString {
+	} else if (len(managedMsg.Embeds) > 0 && !isDiscordMessageEmbedEqual(managedMsg.Embeds[0], msgEmbed)) || managedMsg.Content != contentString {
 		_, err = m.discord.ChannelMessageEditComplex(&discordgo.MessageEdit{
 			Content: &contentString,
 			Embed:   msgEmbed,
