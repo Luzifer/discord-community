@@ -212,8 +212,11 @@ func (m modStreamSchedule) assembleEmbed(data *twitchStreamSchedule) *discordgo.
 }
 
 func (m modStreamSchedule) executeContentTemplate(data *twitchStreamSchedule) (string, error) {
+	fns := sprig.FuncMap()
+	fns["localeStrftime"] = localeStrftime
+
 	tpl, err := template.New("streamschedule").
-		Funcs(sprig.FuncMap()).
+		Funcs(fns).
 		Parse(m.attrs.MustString("content", ptrStringEmpty))
 	if err != nil {
 		return "", errors.Wrap(err, "parsing template")
