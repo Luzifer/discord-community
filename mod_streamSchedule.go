@@ -122,7 +122,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 	if managedMsg != nil {
 		oldEmbed := managedMsg.Embeds[0]
 
-		if isDiscordMessageEmbedEqual(oldEmbed, msgEmbed) {
+		if isDiscordMessageEmbedEqual(oldEmbed, msgEmbed) && strings.TrimSpace(managedMsg.Content) == strings.TrimSpace(contentString) {
 			log.Debug("Stream Schedule is up-to-date")
 			return
 		}
