@@ -1,3 +1,15 @@
+# 0.13.0 / 2024-12-12
+
+  * [liveposting] Make embed title and therefore whole embed optional
+  * [streamSchedule] Add capability for content templating in stream schedule
+  * Fix: Only access slice if it has content
+  * Fix: Expose `formatTime` formatter instead for timezon support
+  * Fix: Allow locale time in templating
+  * Fix: Compare content for updates
+  * Fix: Do not try to compare non existing embed
+  * Fix: Remove `embed_title` as required attribute
+  * Update Go dependencies
+
 # 0.12.3 / 2022-03-04
 
   * Fix: Trim spaces in title as Discord does
