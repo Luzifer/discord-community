@@ -8,7 +8,7 @@ import (
 
 	korvike "github.com/Luzifer/korvike/functions"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v3"
 )
 
 type (
@@ -54,6 +54,6 @@ func newConfigFromFile(filename string) (*configFile, error) {
 		tmp     configFile
 	)
 
-	decoder.SetStrict(true)
+	decoder.KnownFields(true)
 	return &tmp, errors.Wrap(decoder.Decode(&tmp), "decoding config")
 }
