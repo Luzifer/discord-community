@@ -1,7 +1,7 @@
-FROM golang:alpine as builder
+FROM golang:1.25-alpine as builder
 
-COPY . /go/src/github.com/Luzifer/discord-community
-WORKDIR /go/src/github.com/Luzifer/discord-community
+COPY . /src/discord-community
+WORKDIR /src/discord-community
 
 RUN set -ex \
  && apk add --update git \
@@ -9,7 +9,8 @@ RUN set -ex \
       -ldflags "-X main.version=$(git describe --tags --always || echo dev)" \
       -mod=readonly
 
-FROM alpine:latest
+
+FROM alpine:3.22
 
 ENV TZ=Europe/Berlin
 
