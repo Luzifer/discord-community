@@ -1,0 +1,38 @@
+name: Generate Wiki Docs
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  gendoc:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Check out the main repository
+      - name: Check out repository
+        uses: actions/checkout@v5.0.0
+
+      # 2️⃣ Check out the wiki repository into ./wiki
+      - name: Check out wiki
+        uses: actions/checkout@v5.0.0
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+
+      # 3️⃣ Generate documentation
+      - name: Generate documentation
+        run: make gendoc
+
+      # 4️⃣ Commit and push changes in ./wiki
+      - name: Commit & Push wiki changes
+        uses: stefanzweifel/git-auto-commit-action@v6.0.1
+        with:
+          commit_message: "docs: update generated documentation"
+          branch: master
+          repository: wiki
