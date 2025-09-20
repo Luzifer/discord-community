@@ -12,7 +12,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -25,8 +25,8 @@ const (
 )
 
 var (
-	defaultStreamScheduleEntries  = ptrInt64(5)                   //nolint: gomnd // This is already the "constant"
-	defaultStreamSchedulePastTime = ptrDuration(15 * time.Minute) //nolint: gomnd // This is already the "constant"
+	defaultStreamScheduleEntries  = ptrInt64(5)                   //nolint:mnd // This is already the "constant"
+	defaultStreamSchedulePastTime = ptrDuration(15 * time.Minute) //nolint:mnd // This is already the "constant"
 )
 
 func init() {
@@ -63,9 +63,8 @@ func (m *modStreamSchedule) Initialize(id string, crontab *cron.Cron, discord *d
 	return nil
 }
 
-func (m modStreamSchedule) Setup() error { return nil }
+func (modStreamSchedule) Setup() error { return nil }
 
-//nolint:funlen,gocyclo // Seeing no sense to split for 5 lines
 func (m modStreamSchedule) cronUpdateSchedule() {
 	twitch := newTwitchAdapter(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
@@ -83,7 +82,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 		ptrTime(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", defaultStreamSchedulePastTime))),
 	)
 	if err != nil {
-		log.WithError(err).Error("Unable to fetch stream schedule")
+		logrus.WithError(err).Error("Unable to fetch stream schedule")
 		return
 	}
 
@@ -100,7 +99,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 	// @attr content optional string "" Message content to post above the embed - Allows Go templating, make sure to proper escape the template strings. See [here](https://github.com/Luzifer/discord-community/blob/5f004fdab066f16580f41076a4e6d8668fe743c9/twitch.go#L53-L71) for available data object.
 	if m.attrs.MustString("content", ptrStringEmpty) != "" {
 		if contentString, err = m.executeContentTemplate(data); err != nil {
-			log.WithError(err).Error("executing stream schedule template")
+			logrus.WithError(err).Error("executing stream schedule template")
 			return
 		}
 	}
@@ -115,7 +114,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 		managedMsg, err = m.discord.ChannelMessage(channelID, mid)
 		return errors.Wrap(err, "fetching managed message")
 	}); err != nil {
-		log.WithError(err).Error("Unable to fetch managed message for stream schedule")
+		logrus.WithError(err).Error("Unable to fetch managed message for stream schedule")
 		return
 	}
 
@@ -126,7 +125,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 		}
 
 		if isDiscordMessageEmbedEqual(oldEmbed, msgEmbed) && strings.TrimSpace(managedMsg.Content) == strings.TrimSpace(contentString) {
-			log.Debug("Stream Schedule is up-to-date")
+			logrus.Debug("Stream Schedule is up-to-date")
 			return
 		}
 
@@ -144,16 +143,16 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 		})
 	}
 	if err != nil {
-		log.WithError(err).Error("Unable to announce streamplan")
+		logrus.WithError(err).Error("Unable to announce streamplan")
 		return
 	}
 
 	if err = store.Set(m.id, "message_id", managedMsg.ID); err != nil {
-		log.WithError(err).Error("Unable to store managed message id")
+		logrus.WithError(err).Error("Unable to store managed message id")
 		return
 	}
 
-	log.Info("Updated Stream Schedule")
+	logrus.Info("Updated Stream Schedule")
 }
 
 func (m modStreamSchedule) assembleEmbed(data *twitchStreamSchedule) *discordgo.MessageEmbed {
@@ -234,7 +233,7 @@ func (m modStreamSchedule) formatTime(t time.Time) string {
 	// @attr timezone optional string "UTC" Timezone to display the times in (e.g. `Europe/Berlin`)
 	tz, err := time.LoadLocation(m.attrs.MustString("timezone", ptrString("UTC")))
 	if err != nil {
-		log.WithError(err).Fatal("Unable to load timezone")
+		logrus.WithError(err).Fatal("Unable to load timezone")
 	}
 
 	return localeStrftime(

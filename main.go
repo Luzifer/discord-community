@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	httpHelpers "github.com/Luzifer/go_helpers/v2/http"
 	"github.com/Luzifer/go_helpers/v2/str"
@@ -29,24 +30,22 @@ var (
 	version = "dev"
 )
 
-func init() {
+func initApp() (err error) {
 	rconfig.AutoEnv(true)
-	if err := rconfig.ParseAndValidate(&cfg); err != nil {
-		log.Fatalf("Unable to parse commandline options: %s", err)
+	if err = rconfig.ParseAndValidate(&cfg); err != nil {
+		return fmt.Errorf("parsing CLI options: %w", err)
 	}
 
-	if cfg.VersionAndExit {
-		fmt.Printf("discord-community %s\n", version)
-		os.Exit(0)
+	l, err := logrus.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		return fmt.Errorf("parsing log-level: %w", err)
 	}
+	logrus.SetLevel(l)
 
-	if l, err := log.ParseLevel(cfg.LogLevel); err != nil {
-		log.WithError(err).Fatal("Unable to parse log level")
-	} else {
-		log.SetLevel(l)
-	}
+	return nil
 }
 
+//nolint:funlen,gocyclo
 func main() {
 	var (
 		crontab       = cron.New()
@@ -55,84 +54,93 @@ func main() {
 		activeModules []module
 	)
 
+	if err = initApp(); err != nil {
+		logrus.WithError(err).Fatal("initializing app")
+	}
+
+	if cfg.VersionAndExit {
+		fmt.Printf("discord-community %s\n", version) //nolint:forbidigo
+		os.Exit(0)
+	}
+
 	if config, err = newConfigFromFile(cfg.Config); err != nil {
-		log.WithError(err).Fatal("Unable to load config file")
+		logrus.WithError(err).Fatal("loading config file")
 	}
 
 	if config.StoreLocation == "" {
-		log.Fatal("Config contains no store location")
+		logrus.Fatal("config contains no store location")
 	}
 
 	if store, err = newMetaStoreFromDisk(config.StoreLocation); err != nil {
-		log.WithError(err).Fatal("Unable to load store")
+		logrus.WithError(err).Fatal("loading store")
 	}
 
 	// Connect to Discord
 	if discord, err = discordgo.New(strings.Join([]string{"Bot", config.BotToken}, " ")); err != nil {
-		log.WithError(err).Fatal("Unable to create discord client")
+		logrus.WithError(err).Fatal("creating discord client")
 	}
 
 	discord.Identify.Intents = discordgo.IntentsAll
 
 	var activeIDs []string
 	for i, mc := range config.ModuleConfigs {
-		logger := log.WithFields(log.Fields{
+		logger := logrus.WithFields(logrus.Fields{
 			"id":     mc.ID,
 			"idx":    i,
 			"module": mc.Type,
 		})
 
 		if str.StringInSlice(mc.ID, activeIDs) {
-			logger.Error("Found duplicate module ID, module will be disabled")
+			logger.Error("found duplicate module ID, module will be disabled")
 			continue
 		}
 
 		if mc.ID == "" {
-			logger.Error("Module contains no ID and will be disabled")
+			logger.Error("module contains no ID and will be disabled")
 			continue
 		}
 
 		mod := GetModuleByName(mc.Type)
 		if mod == nil {
-			logger.Fatal("Found configuration for unsupported module")
+			logger.Fatal("found configuration for unsupported module")
 		}
 
 		if err = mod.Initialize(mc.ID, crontab, discord, mc.Attributes); err != nil {
-			logger.WithError(err).Fatal("Unable to initialize module")
+			logger.WithError(err).Fatal("initializing module")
 		}
 
 		activeModules = append(activeModules, mod)
 		activeIDs = append(activeIDs, mc.ID)
 
-		logger.Debug("Enabled module")
+		logger.Debug("enabled module")
 	}
 
 	if len(activeModules) == 0 {
-		log.Warn("No modules were enabled, quitting now")
+		logrus.Warn("no modules were enabled, quitting now")
 		return
 	}
 
 	if err = discord.Open(); err != nil {
-		log.WithError(err).Fatal("Unable to connect discord client")
+		logrus.WithError(err).Fatal("connecting discord client")
 	}
-	defer discord.Close()
-	log.Debug("Discord connected")
+	defer discord.Close() //nolint:errcheck // Will be closed by program exit
+	logrus.Debug("discord connected")
 
 	guild, err := discord.Guild(config.GuildID)
 	if err != nil {
-		log.WithError(err).Fatal("Unable to get guild for given guild-id in config: Is the bot added and the ID correct?")
+		logrus.WithError(err).Fatal("getting guild for given guild-id in config: is the bot added and the ID correct?")
 	}
-	log.WithField("name", guild.Name).Info("Found specified guild for operation")
+	logrus.WithField("name", guild.Name).Info("found specified guild for operation")
 
 	// Run Crontab
 	crontab.Start()
 	defer crontab.Stop()
-	log.Debug("Crontab started")
+	logrus.Debug("crontab started")
 
 	// Execute Setup methods now after we're connected
 	for i, mod := range activeModules {
 		if err = mod.Setup(); err != nil {
-			log.WithError(err).WithField("idx", i).Fatal("Unable to run setup for module")
+			logrus.WithError(err).WithField("idx", i).Fatal("running setup for module")
 		}
 	}
 
@@ -141,7 +149,15 @@ func main() {
 	h = httpHelpers.GzipHandler(h)
 	h = httpHelpers.NewHTTPLogHandler(h)
 
-	log.WithField("version", version).Info("Bot setup done, bot is now running")
+	server := &http.Server{
+		Addr:              cfg.Listen,
+		Handler:           h,
+		ReadHeaderTimeout: time.Second,
+	}
 
-	http.ListenAndServe(cfg.Listen, h)
+	logrus.WithField("version", version).Info("bot setup done, bot is now running")
+
+	if err = server.ListenAndServe(); err != nil {
+		logrus.WithError(err).Fatal("listening for HTTP traffic")
+	}
 }

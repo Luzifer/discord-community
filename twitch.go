@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/Luzifer/go_helpers/v2/backoff"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -40,7 +41,7 @@ type (
 			StartedAt    time.Time `json:"started_at"`
 			Language     string    `json:"language"`
 			ThumbnailURL string    `json:"thumbnail_url"`
-			TagIds       []string  `json:"tag_ids"`
+			TagIDs       []string  `json:"tag_ids"`
 			IsMature     bool      `json:"is_mature"`
 		} `json:"data"`
 		Pagination struct {
@@ -109,14 +110,18 @@ func (t twitchAdapter) GetChannelStreamSchedule(ctx context.Context, broadcaster
 		params.Set("start_time", startTime.Format(time.RFC3339))
 	}
 
-	return out, backoff.NewBackoff().
+	if err := backoff.NewBackoff().
 		WithMaxIterations(twitchAPIRequestLimit).
 		Retry(func() error {
 			return errors.Wrap(
 				t.request(ctx, http.MethodGet, "/helix/schedule", params, nil, out),
 				"fetching schedule",
 			)
-		})
+		}); err != nil {
+		return nil, fmt.Errorf("getting schedule: %w", err)
+	}
+
+	return out, nil
 }
 
 func (t twitchAdapter) GetStreamsForUser(ctx context.Context, userNames ...string) (*twitchStreamListing, error) {
@@ -126,14 +131,18 @@ func (t twitchAdapter) GetStreamsForUser(ctx context.Context, userNames ...strin
 	params.Set("first", "100")
 	params["user_login"] = userNames
 
-	return out, backoff.NewBackoff().
+	if err := backoff.NewBackoff().
 		WithMaxIterations(twitchAPIRequestLimit).
 		Retry(func() error {
 			return errors.Wrap(
 				t.request(ctx, http.MethodGet, "/helix/streams", params, nil, out),
 				"fetching streams",
 			)
-		})
+		}); err != nil {
+		return nil, fmt.Errorf("getting streams: %w", err)
+	}
+
+	return out, nil
 }
 
 func (t twitchAdapter) GetUserByUsername(ctx context.Context, userNames ...string) (*twitchUserListing, error) {
@@ -143,14 +152,18 @@ func (t twitchAdapter) GetUserByUsername(ctx context.Context, userNames ...strin
 	params.Set("first", "100")
 	params["login"] = userNames
 
-	return out, backoff.NewBackoff().
+	if err := backoff.NewBackoff().
 		WithMaxIterations(twitchAPIRequestLimit).
 		Retry(func() error {
 			return errors.Wrap(
 				t.request(ctx, http.MethodGet, "/helix/users", params, nil, out),
 				"fetching user",
 			)
-		})
+		}); err != nil {
+		return nil, fmt.Errorf("getting user: %w", err)
+	}
+
+	return out, nil
 }
 
 func (t twitchAdapter) getAppAccessToken(ctx context.Context) (string, error) {
@@ -175,10 +188,14 @@ func (t twitchAdapter) getAppAccessToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "fetching response")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logrus.WithError(err).Error("closing Twitch response body")
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return "", errors.Wrapf(err, "unexpected status %d and cannot read body", resp.StatusCode)
 		}
@@ -220,10 +237,14 @@ func (t twitchAdapter) request(ctx context.Context, method, path string, params 
 	if err != nil {
 		return errors.Wrap(err, "fetching response")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logrus.WithError(err).Error("closing Twitch response body")
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrapf(err, "unexpected status %d and cannot read body", resp.StatusCode)
 		}

@@ -2,12 +2,13 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"os"
 	"text/template"
 
 	korvike "github.com/Luzifer/korvike/functions"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -28,13 +29,17 @@ type (
 )
 
 func newConfigFromFile(filename string) (*configFile, error) {
-	f, err := os.Open(filename)
+	f, err := os.Open(filename) //#nosec:G304 // Intended to load specified config
 	if err != nil {
 		return nil, errors.Wrap(err, "opening config file")
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			logrus.WithError(err).Error("closing config")
+		}
+	}()
 
-	configContent, err := ioutil.ReadAll(f)
+	configContent, err := io.ReadAll(f)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading config file")
 	}

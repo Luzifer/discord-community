@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type metaStore struct {
@@ -44,11 +45,15 @@ func newMetaStoreFromDisk(filename string) (*metaStore, error) {
 		return out, nil
 	}
 
-	f, err := os.Open(filename)
+	f, err := os.Open(filename) //#nosec:G304 // Intended to open store location
 	if err != nil {
 		return nil, errors.Wrap(err, "opening store")
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			logrus.WithError(err).Error("closing store (read)")
+		}
+	}()
 
 	return out, errors.Wrap(
 		json.NewDecoder(f).Decode(out),
@@ -63,12 +68,16 @@ func (m *metaStore) Save() error {
 	return m.save()
 }
 
-func (m *metaStore) save() error {
+func (m *metaStore) save() error { //revive:disable-line:confusing-naming
 	f, err := os.Create(m.filename)
 	if err != nil {
 		return errors.Wrap(err, "creating storage file")
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			logrus.WithError(err).Error("closing store (write)")
+		}
+	}()
 
 	return errors.Wrap(
 		json.NewEncoder(f).Encode(m),

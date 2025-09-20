@@ -9,7 +9,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -55,7 +55,7 @@ func (m *modPresence) Initialize(id string, crontab *cron.Cron, discord *discord
 	return nil
 }
 
-func (m modPresence) Setup() error { return nil }
+func (modPresence) Setup() error { return nil }
 
 func (m modPresence) cronUpdatePresence() {
 	var nextStream *time.Time
@@ -76,7 +76,7 @@ func (m modPresence) cronUpdatePresence() {
 		ptrTime(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", defaultStreamSchedulePastTime))),
 	)
 	if err != nil {
-		log.WithError(err).Error("Unable to fetch stream schedule")
+		logrus.WithError(err).Error("Unable to fetch stream schedule")
 		return
 	}
 
@@ -100,13 +100,13 @@ func (m modPresence) cronUpdatePresence() {
 	}
 
 	if err := m.discord.UpdateGameStatus(0, status); err != nil {
-		log.WithError(err).Error("Unable to update status")
+		logrus.WithError(err).Error("Unable to update status")
 	}
 
-	log.Debug("Updated presence")
+	logrus.Debug("Updated presence")
 }
 
-func (m modPresence) durationToHumanReadable(d time.Duration) string {
+func (modPresence) durationToHumanReadable(d time.Duration) string {
 	d = time.Duration(math.Abs(float64(d)))
 
 	if d > presenceTimeDay {

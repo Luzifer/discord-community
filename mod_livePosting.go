@@ -13,7 +13,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/go_helpers/v2/str"
 )
@@ -76,7 +76,7 @@ func (m *modLivePosting) Initialize(id string, crontab *cron.Cron, discord *disc
 	return nil
 }
 
-func (m *modLivePosting) Setup() error { return nil }
+func (*modLivePosting) Setup() error { return nil }
 
 func (m *modLivePosting) cronFetchChannelStatus() {
 	// @attr poll_usernames optional []string "[]" Check these usernames for active streams when executing the `cron` (at most 100 users can be checked)
@@ -88,14 +88,14 @@ func (m *modLivePosting) cronFetchChannelStatus() {
 		// There is no list of users
 		return
 	default:
-		log.WithError(err).Error("Unable to get poll_usernames list")
+		logrus.WithError(err).Error("Unable to get poll_usernames list")
 		return
 	}
 
-	log.WithField("entries", len(usernames)).Trace("Fetching streams for users (cron)")
+	logrus.WithField("entries", len(usernames)).Trace("Fetching streams for users (cron)")
 
 	if err = m.fetchAndPostForUsername(usernames...); err != nil {
-		log.WithError(err).Error("Unable to post status for users")
+		logrus.WithError(err).Error("Unable to post status for users")
 	}
 }
 
@@ -118,7 +118,7 @@ func (m *modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 		return errors.Wrap(err, "fetching streams for user")
 	}
 
-	log.WithFields(log.Fields{
+	logrus.WithFields(logrus.Fields{
 		"streams": len(streams.Data),
 		"users":   len(users.Data),
 	}).Trace("Found active streams from users")
@@ -134,7 +134,7 @@ func (m *modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 
 			isFresh := time.Since(stream.StartedAt) <= streamFreshness
 
-			log.WithFields(log.Fields{
+			logrus.WithFields(logrus.Fields{
 				"isFresh":    isFresh,
 				"started_at": stream.StartedAt,
 				"user":       user.DisplayName,
@@ -172,7 +172,7 @@ func (m *modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo
 		return
 	}
 
-	logger := log.WithFields(log.Fields{
+	logger := logrus.WithFields(logrus.Fields{
 		"user": p.User.ID,
 	})
 
@@ -227,7 +227,7 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	logger := log.WithFields(log.Fields{
+	logger := logrus.WithFields(logrus.Fields{
 		"user": username,
 		"game": game,
 	})

@@ -8,7 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/go_helpers/v2/str"
 )
@@ -54,7 +54,7 @@ func (m *modClearChannel) Initialize(id string, crontab *cron.Cron, discord *dis
 	return nil
 }
 
-func (m modClearChannel) Setup() error { return nil }
+func (modClearChannel) Setup() error { return nil }
 
 func (m modClearChannel) cronClearChannel() {
 	var (
@@ -75,7 +75,7 @@ func (m modClearChannel) cronClearChannel() {
 	case nil, errValueNotSet:
 		// This is fine
 	default:
-		log.WithError(err).Error("Unable to load value for only_users")
+		logrus.WithError(err).Error("Unable to load value for only_users")
 		return
 	}
 
@@ -85,14 +85,14 @@ func (m modClearChannel) cronClearChannel() {
 	case nil, errValueNotSet:
 		// This is fine
 	default:
-		log.WithError(err).Error("Unable to load value for protect_users")
+		logrus.WithError(err).Error("Unable to load value for protect_users")
 		return
 	}
 
 	for {
 		msgs, err := m.discord.ChannelMessages(channelID, clearChannelNumberOfMessagesToLoad, "", after, "")
 		if err != nil {
-			log.WithError(err).Error("Unable to fetch announcement channel messages")
+			logrus.WithError(err).Error("Unable to fetch announcement channel messages")
 			return
 		}
 
@@ -123,7 +123,7 @@ func (m modClearChannel) cronClearChannel() {
 			}
 
 			if err = m.discord.ChannelMessageDelete(channelID, msg.ID); err != nil {
-				log.WithError(err).Error("Unable to delete messages")
+				logrus.WithError(err).Error("Unable to delete messages")
 				return
 			}
 

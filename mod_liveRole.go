@@ -9,7 +9,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -29,7 +29,7 @@ type modLiveRole struct {
 
 func (m modLiveRole) ID() string { return m.id }
 
-func (m *modLiveRole) Initialize(id string, crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
+func (m *modLiveRole) Initialize(id string, _ *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
 	m.attrs = attrs
 	m.discord = discord
 	m.id = id
@@ -47,7 +47,7 @@ func (m *modLiveRole) Initialize(id string, crontab *cron.Cron, discord *discord
 	return nil
 }
 
-func (m modLiveRole) Setup() error { return nil }
+func (modLiveRole) Setup() error { return nil }
 
 func (m modLiveRole) addLiveStreamerRole(guildID, userID string, presentRoles []string) error {
 	// @attr role_streamers_live required string "" Role ID to assign to live streamers (make sure the bot [can assign](https://support.discord.com/hc/en-us/articles/214836687-Role-Management-101) this role)
@@ -77,7 +77,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		return
 	}
 
-	logger := log.WithField("user", p.User.ID)
+	logger := logrus.WithField("user", p.User.ID)
 
 	member, err := d.GuildMember(p.GuildID, p.User.ID)
 	if err != nil {
@@ -116,7 +116,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	if activity == nil {
 		// No streaming activity: Remove role
 		exitFunc = m.removeLiveStreamerRole
-		logger = logger.WithFields(log.Fields{"action": "remove", "reason": "no activity"})
+		logger = logger.WithFields(logrus.Fields{"action": "remove", "reason": "no activity"})
 		return
 	}
 
@@ -124,14 +124,14 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	if err != nil {
 		logger.WithError(err).WithField("url", activity.URL).Warning("Unable to parse activity URL")
 		exitFunc = m.removeLiveStreamerRole
-		logger = logger.WithFields(log.Fields{"action": "remove", "reason": "broken activity URL"})
+		logger = logger.WithFields(logrus.Fields{"action": "remove", "reason": "broken activity URL"})
 		return
 	}
 
 	if u.Host != "www.twitch.tv" {
 		logger.WithError(err).WithField("url", activity.URL).Warning("Activity is not on Twitch")
 		exitFunc = m.removeLiveStreamerRole
-		logger = logger.WithFields(log.Fields{"action": "remove", "reason": "activity not on twitch"})
+		logger = logger.WithFields(logrus.Fields{"action": "remove", "reason": "activity not on twitch"})
 		return
 	}
 
@@ -147,13 +147,13 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	if err != nil {
 		logger.WithError(err).WithField("user", strings.TrimLeft(u.Path, "/")).Warning("Unable to fetch streams for user")
 		exitFunc = m.removeLiveStreamerRole
-		logger = logger.WithFields(log.Fields{"action": "remove", "reason": "error in getting streams"})
+		logger = logger.WithFields(logrus.Fields{"action": "remove", "reason": "error in getting streams"})
 		return
 	}
 
 	if len(streams.Data) > 0 {
 		exitFunc = m.addLiveStreamerRole
-		logger = logger.WithFields(log.Fields{"action": "add", "reason": "stream found"})
+		logger = logger.WithFields(logrus.Fields{"action": "add", "reason": "stream found"})
 	}
 }
 

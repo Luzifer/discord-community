@@ -8,7 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/go_helpers/v2/env"
 	"github.com/Luzifer/go_helpers/v2/str"
@@ -31,7 +31,7 @@ type modReactionRole struct {
 
 func (m modReactionRole) ID() string { return m.id }
 
-func (m *modReactionRole) Initialize(id string, crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
+func (m *modReactionRole) Initialize(id string, _ *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
 	m.attrs = attrs
 	m.discord = discord
 	m.id = id
@@ -49,7 +49,7 @@ func (m *modReactionRole) Initialize(id string, crontab *cron.Cron, discord *dis
 	return nil
 }
 
-//nolint:funlen,gocyclo // Single task, seeing no sense in splitting
+//nolint:funlen,gocognit,gocyclo // Single task, seeing no sense in splitting
 func (m modReactionRole) Setup() error {
 	var err error
 
@@ -153,7 +153,7 @@ func (m modReactionRole) Setup() error {
 
 	for _, emoji := range reactionList {
 		if !str.StringInSlice(emoji, addedReactions) {
-			log.WithFields(log.Fields{
+			logrus.WithFields(logrus.Fields{
 				"emote":   emoji,
 				"message": managedMsg.ID,
 				"module":  m.id,
@@ -177,7 +177,8 @@ func (m modReactionRole) extractRoles() (map[string]string, error) {
 	return env.ListToMap(list), nil
 }
 
-func (m modReactionRole) handleMessageReaction(d *discordgo.Session, e *discordgo.MessageReaction, add bool) {
+//revive:disable-next-line:flag-parameter
+func (m modReactionRole) handleMessageReaction(_ *discordgo.Session, e *discordgo.MessageReaction, add bool) {
 	if e.UserID == m.discord.State.User.ID {
 		// Reaction was manipulated by the bot, ignore
 		return
@@ -192,7 +193,7 @@ func (m modReactionRole) handleMessageReaction(d *discordgo.Session, e *discordg
 		messageID, err = a.String("message_id")
 		return errors.Wrap(err, "reading message ID")
 	}); err != nil {
-		log.WithError(err).Error("Unable to get managed message ID")
+		logrus.WithError(err).Error("Unable to get managed message ID")
 		return
 	}
 
@@ -203,7 +204,7 @@ func (m modReactionRole) handleMessageReaction(d *discordgo.Session, e *discordg
 
 	roles, err := m.extractRoles()
 	if err != nil {
-		log.WithError(err).Error("Unable to extract role mapping")
+		logrus.WithError(err).Error("Unable to extract role mapping")
 		return
 	}
 
@@ -215,14 +216,14 @@ func (m modReactionRole) handleMessageReaction(d *discordgo.Session, e *discordg
 
 		if add {
 			if err = m.discord.GuildMemberRoleAdd(config.GuildID, e.UserID, strings.Split(role, ":")[0]); err != nil {
-				log.WithError(err).Error("Unable to add role to user")
+				logrus.WithError(err).Error("Unable to add role to user")
 			}
 			return
 		}
 
 		if !strings.HasSuffix(role, ":set") {
 			if err = m.discord.GuildMemberRoleRemove(config.GuildID, e.UserID, strings.Split(role, ":")[0]); err != nil {
-				log.WithError(err).Error("Unable to remove role to user")
+				logrus.WithError(err).Error("Unable to remove role to user")
 			}
 			return
 		}
