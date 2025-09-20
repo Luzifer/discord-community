@@ -1,8 +1,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/Luzifer/discord-community)](https://goreportcard.com/report/github.com/Luzifer/discord-community)
-![](https://badges.fyi/github/license/Luzifer/discord-community)
-![](https://badges.fyi/github/downloads/Luzifer/discord-community)
-![](https://badges.fyi/github/latest-release/Luzifer/discord-community)
-![](https://knut.in/project-status/discord-community)
+![](https://img.shields.io/github/license/Luzifer/discord-community)
+![](https://img.shields.io/github/downloads/Luzifer/discord-community/total)
+![](https://img.shields.io/github/v/release/Luzifer/discord-community)
 
 # Luzifer / discord-community
 
