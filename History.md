@@ -1,3 +1,12 @@
+# 0.14.0 / 2025-09-20
+
+  * refactor: move modules into own packages, cleanup code, modernize code
+  * fix(deps): update module github.com/bwmarrin/discordgo to v0.29.0
+  * fix(deps): update module github.com/luzifer/korvike/functions to v1.0.2
+  * fix(deps): update module github.com/luzifer/rconfig/v2 to v2.6.0
+  * chore(deps): update dependency go to v1.25.1
+  * chore: replace gopkg.in/yaml.v2
+
 # 0.13.0 / 2024-12-12
 
   * [liveposting] Make embed title and therefore whole embed optional
