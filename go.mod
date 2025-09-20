@@ -1,13 +1,13 @@
 module github.com/Luzifer/discord-community
 
-go 1.22
+go 1.23
 
 toolchain go1.25.1
 
 require (
 	github.com/Luzifer/go_helpers/v2 v2.25.0
 	github.com/Luzifer/korvike/functions v1.0.1
-	github.com/Luzifer/rconfig/v2 v2.5.2
+	github.com/Luzifer/rconfig/v2 v2.6.0
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/bwmarrin/discordgo v0.28.1
 	github.com/goodsign/monday v1.0.2
@@ -44,7 +44,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
