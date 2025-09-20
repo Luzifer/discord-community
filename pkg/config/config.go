@@ -31,6 +31,7 @@ type (
 	}
 )
 
+// NewFromFile reads the configuration from the given file
 func NewFromFile(filename string) (*File, error) {
 	f, err := os.Open(filename) //#nosec:G304 // Intended to load specified config
 	if err != nil {

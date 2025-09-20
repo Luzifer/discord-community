@@ -10,7 +10,12 @@ import (
 )
 
 var (
-	ErrValueNotSet   = errors.New("specified value not found")
+	// ErrValueNotSet signals the value with the given key is not present
+	// in the ModuleAttributeStore
+	ErrValueNotSet = errors.New("specified value not found")
+
+	// ErrValueMismatch signals the value with the given key has another
+	// type than the getter function expected
 	ErrValueMismatch = errors.New("specified value has different format")
 )
 
