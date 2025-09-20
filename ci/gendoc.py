@@ -41,7 +41,7 @@ def main(args):
 
     modules = sorted(modules, key=lambda m: m['type'])
 
-    with open('wiki/Home.md.tpl', 'r') as f:
+    with open('ci/Home.md.tpl', 'r') as f:
         tpl = jinja2.Template(f.read())
         print(tpl.render(modules=modules))
 
