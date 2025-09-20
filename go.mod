@@ -2,7 +2,7 @@ module github.com/Luzifer/discord-community
 
 go 1.22
 
-toolchain go1.23.4
+toolchain go1.25.1
 
 require (
 	github.com/Luzifer/go_helpers/v2 v2.25.0
