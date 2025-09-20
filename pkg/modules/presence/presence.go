@@ -1,4 +1,4 @@
-package main
+package presence
 
 import (
 	"context"
@@ -6,9 +6,12 @@ import (
 	"math"
 	"time"
 
+	"github.com/Luzifer/discord-community/pkg/attributestore"
+	"github.com/Luzifer/discord-community/pkg/helpers"
+	"github.com/Luzifer/discord-community/pkg/modules"
+	"github.com/Luzifer/discord-community/pkg/twitch"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
-	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,23 +25,23 @@ const (
 )
 
 func init() {
-	RegisterModule("presence", func() module { return &modPresence{} })
+	modules.RegisterModule("presence", func() modules.Module { return &modPresence{} })
 }
 
 type modPresence struct {
-	attrs   moduleAttributeStore
+	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
 }
 
 func (m modPresence) ID() string { return m.id }
 
-func (m *modPresence) Initialize(id string, crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
-	m.attrs = attrs
-	m.discord = discord
-	m.id = id
+func (m *modPresence) Initialize(args modules.ModuleInitArgs) error {
+	m.attrs = args.Attrs
+	m.discord = args.Discord
+	m.id = args.ID
 
-	if err := attrs.Expect(
+	if err := m.attrs.Expect(
 		"fallback_text",
 		"twitch_channel_id",
 		"twitch_client_id",
@@ -48,7 +51,7 @@ func (m *modPresence) Initialize(id string, crontab *cron.Cron, discord *discord
 	}
 
 	// @attr cron optional string "* * * * *" When to execute the module
-	if _, err := crontab.AddFunc(attrs.MustString("cron", ptrString("* * * * *")), m.cronUpdatePresence); err != nil {
+	if _, err := args.Crontab.AddFunc(m.attrs.MustString("cron", helpers.Ptr("* * * * *")), m.cronUpdatePresence); err != nil {
 		return errors.Wrap(err, "adding cron function")
 	}
 
@@ -60,7 +63,7 @@ func (modPresence) Setup() error { return nil }
 func (m modPresence) cronUpdatePresence() {
 	var nextStream *time.Time
 
-	twitch := newTwitchAdapter(
+	t := twitch.New(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
 		m.attrs.MustString("twitch_client_id", nil),
 		// @attr twitch_client_secret required string "" Secret for the Twitch app identified with twitch_client_id
@@ -68,12 +71,12 @@ func (m modPresence) cronUpdatePresence() {
 		"", // No User-Token used
 	)
 
-	data, err := twitch.GetChannelStreamSchedule(
+	data, err := t.GetChannelStreamSchedule(
 		context.Background(),
 		// @attr twitch_channel_id required string "" ID (not name) of the channel to fetch the schedule from
 		m.attrs.MustString("twitch_channel_id", nil),
 		// @attr schedule_past_time optional duration "15m" How long in the past should the schedule contain an entry
-		ptrTime(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", defaultStreamSchedulePastTime))),
+		helpers.Ptr(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", helpers.DefaultStreamSchedulePastTime))),
 	)
 	if err != nil {
 		logrus.WithError(err).Error("Unable to fetch stream schedule")

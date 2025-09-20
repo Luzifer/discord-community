@@ -1,24 +1,28 @@
-package main
+package modules
 
 import (
 	"encoding/json"
 	"os"
 	"sync"
 
+	"github.com/Luzifer/discord-community/pkg/attributestore"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-type metaStore struct {
-	ModuleAttributes map[string]moduleAttributeStore `json:"module_attributes"`
+// MetaStore holds the data stored by modules and serializes it
+type MetaStore struct {
+	ModuleAttributes map[string]attributestore.ModuleAttributeStore `json:"module_attributes"`
 
 	filename string
 	lock     sync.RWMutex
 }
 
-func newMetaStoreFromDisk(filename string) (*metaStore, error) {
-	out := &metaStore{
-		ModuleAttributes: map[string]moduleAttributeStore{},
+// NewMetaStoreFromDisk reads the stored data from disk and returns
+// a new MetaStore instance with that data
+func NewMetaStoreFromDisk(filename string) (*MetaStore, error) {
+	out := &MetaStore{
+		ModuleAttributes: map[string]attributestore.ModuleAttributeStore{},
 		filename:         filename,
 	}
 
@@ -61,14 +65,15 @@ func newMetaStoreFromDisk(filename string) (*metaStore, error) {
 	)
 }
 
-func (m *metaStore) Save() error {
+// Save stores the data to disk
+func (m *MetaStore) Save() error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	return m.save()
 }
 
-func (m *metaStore) save() error { //revive:disable-line:confusing-naming
+func (m *MetaStore) save() error { //revive:disable-line:confusing-naming
 	f, err := os.Create(m.filename)
 	if err != nil {
 		return errors.Wrap(err, "creating storage file")
@@ -85,12 +90,13 @@ func (m *metaStore) save() error { //revive:disable-line:confusing-naming
 	)
 }
 
-func (m *metaStore) Set(moduleID, key string, value interface{}) error {
+// Set stores the given value for the given key and module ID
+func (m *MetaStore) Set(moduleID, key string, value interface{}) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	if m.ModuleAttributes[moduleID] == nil {
-		m.ModuleAttributes[moduleID] = make(moduleAttributeStore)
+		m.ModuleAttributes[moduleID] = make(attributestore.ModuleAttributeStore)
 	}
 
 	m.ModuleAttributes[moduleID][key] = value
@@ -98,12 +104,14 @@ func (m *metaStore) Set(moduleID, key string, value interface{}) error {
 	return errors.Wrap(m.save(), "saving store")
 }
 
-func (m *metaStore) ReadWithLock(moduleID string, fn func(m moduleAttributeStore) error) error {
+// ReadWithLock returns the ModuleAttributeStore for the given module ID
+// and locks the MetaStore while the returned store is used
+func (m *MetaStore) ReadWithLock(moduleID string, fn func(m attributestore.ModuleAttributeStore) error) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	if m.ModuleAttributes[moduleID] == nil {
-		return fn(moduleAttributeStore{})
+		return fn(attributestore.ModuleAttributeStore{})
 	}
 
 	return fn(m.ModuleAttributes[moduleID])

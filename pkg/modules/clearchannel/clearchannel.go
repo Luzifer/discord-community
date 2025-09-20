@@ -1,4 +1,4 @@
-package main
+package clearchannel
 
 import (
 	"sort"
@@ -7,9 +7,11 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
-	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 
+	"github.com/Luzifer/discord-community/pkg/attributestore"
+	"github.com/Luzifer/discord-community/pkg/helpers"
+	"github.com/Luzifer/discord-community/pkg/modules"
 	"github.com/Luzifer/go_helpers/v2/str"
 )
 
@@ -23,23 +25,23 @@ const (
 )
 
 func init() {
-	RegisterModule("clearchannel", func() module { return &modClearChannel{} })
+	modules.RegisterModule("clearchannel", func() modules.Module { return &modClearChannel{} })
 }
 
 type modClearChannel struct {
-	attrs   moduleAttributeStore
+	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
 }
 
 func (m modClearChannel) ID() string { return m.id }
 
-func (m *modClearChannel) Initialize(id string, crontab *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
-	m.attrs = attrs
-	m.discord = discord
-	m.id = id
+func (m *modClearChannel) Initialize(args modules.ModuleInitArgs) error {
+	m.attrs = args.Attrs
+	m.discord = args.Discord
+	m.id = args.ID
 
-	if err := attrs.Expect(
+	if err := args.Attrs.Expect(
 		"discord_channel_id",
 		"retention",
 	); err != nil {
@@ -47,7 +49,7 @@ func (m *modClearChannel) Initialize(id string, crontab *cron.Cron, discord *dis
 	}
 
 	// @attr cron optional string "0 * * * *" When to execute the cleaner
-	if _, err := crontab.AddFunc(attrs.MustString("cron", ptrString("0 * * * *")), m.cronClearChannel); err != nil {
+	if _, err := args.Crontab.AddFunc(args.Attrs.MustString("cron", helpers.Ptr("0 * * * *")), m.cronClearChannel); err != nil {
 		return errors.Wrap(err, "adding cron function")
 	}
 
@@ -72,7 +74,7 @@ func (m modClearChannel) cronClearChannel() {
 	// @attr only_users optional []string "[]" When this list contains user IDs, only posts authored by those IDs will be deleted
 	onlyUsers, err = m.attrs.StringSlice("only_users")
 	switch err {
-	case nil, errValueNotSet:
+	case nil, attributestore.ErrValueNotSet:
 		// This is fine
 	default:
 		logrus.WithError(err).Error("Unable to load value for only_users")
@@ -82,7 +84,7 @@ func (m modClearChannel) cronClearChannel() {
 	// @attr protect_users optional []string "[]" When this list contains user IDs, posts authored by those IDs will not be deleted
 	protectUsers, err = m.attrs.StringSlice("protect_users")
 	switch err {
-	case nil, errValueNotSet:
+	case nil, attributestore.ErrValueNotSet:
 		// This is fine
 	default:
 		logrus.WithError(err).Error("Unable to load value for protect_users")

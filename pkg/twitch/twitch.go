@@ -1,4 +1,4 @@
-package main
+package twitch
 
 import (
 	"context"
@@ -21,13 +21,15 @@ const (
 )
 
 type (
-	twitchAdapter struct {
+	// Adapter contains a simplified Twitch API client
+	Adapter struct {
 		clientID     string
 		clientSecret string
 		token        string
 	}
 
-	twitchStreamListing struct {
+	// StreamListing contains streams
+	StreamListing struct {
 		Data []struct {
 			ID           string    `json:"id"`
 			UserID       string    `json:"user_id"`
@@ -49,7 +51,8 @@ type (
 		} `json:"pagination"`
 	}
 
-	twitchStreamSchedule struct {
+	// StreamSchedule contains stream schedule segments
+	StreamSchedule struct {
 		Data struct {
 			Segments []struct {
 				ID            string     `json:"id"`
@@ -76,7 +79,8 @@ type (
 		} `json:"pagination"`
 	}
 
-	twitchUserListing struct {
+	// UserListing contains users
+	UserListing struct {
 		Data []struct {
 			ID              string    `json:"id"`
 			Login           string    `json:"login"`
@@ -93,16 +97,18 @@ type (
 	}
 )
 
-func newTwitchAdapter(clientID, clientSecret, token string) *twitchAdapter {
-	return &twitchAdapter{
+// New creates a new Twitch client
+func New(clientID, clientSecret, token string) *Adapter {
+	return &Adapter{
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		token:        token,
 	}
 }
 
-func (t twitchAdapter) GetChannelStreamSchedule(ctx context.Context, broadcasterID string, startTime *time.Time) (*twitchStreamSchedule, error) {
-	out := &twitchStreamSchedule{}
+// GetChannelStreamSchedule retrieves a schedule for the given broadcaster
+func (t Adapter) GetChannelStreamSchedule(ctx context.Context, broadcasterID string, startTime *time.Time) (*StreamSchedule, error) {
+	out := &StreamSchedule{}
 
 	params := make(url.Values)
 	params.Set("broadcaster_id", broadcasterID)
@@ -124,8 +130,9 @@ func (t twitchAdapter) GetChannelStreamSchedule(ctx context.Context, broadcaster
 	return out, nil
 }
 
-func (t twitchAdapter) GetStreamsForUser(ctx context.Context, userNames ...string) (*twitchStreamListing, error) {
-	out := &twitchStreamListing{}
+// GetStreamsForUser returns the streams for the given users
+func (t Adapter) GetStreamsForUser(ctx context.Context, userNames ...string) (*StreamListing, error) {
+	out := &StreamListing{}
 
 	params := make(url.Values)
 	params.Set("first", "100")
@@ -145,8 +152,9 @@ func (t twitchAdapter) GetStreamsForUser(ctx context.Context, userNames ...strin
 	return out, nil
 }
 
-func (t twitchAdapter) GetUserByUsername(ctx context.Context, userNames ...string) (*twitchUserListing, error) {
-	out := &twitchUserListing{}
+// GetUserByUsername returns the user objects for the given usernames
+func (t Adapter) GetUserByUsername(ctx context.Context, userNames ...string) (*UserListing, error) {
+	out := &UserListing{}
 
 	params := make(url.Values)
 	params.Set("first", "100")
@@ -166,7 +174,7 @@ func (t twitchAdapter) GetUserByUsername(ctx context.Context, userNames ...strin
 	return out, nil
 }
 
-func (t twitchAdapter) getAppAccessToken(ctx context.Context) (string, error) {
+func (t Adapter) getAppAccessToken(ctx context.Context) (string, error) {
 	var rData struct {
 		AccessToken  string        `json:"access_token"`
 		RefreshToken string        `json:"refresh_token"`
@@ -208,7 +216,7 @@ func (t twitchAdapter) getAppAccessToken(ctx context.Context) (string, error) {
 	)
 }
 
-func (t twitchAdapter) request(ctx context.Context, method, path string, params url.Values, body io.Reader, output interface{}) error {
+func (t Adapter) request(ctx context.Context, method, path string, params url.Values, body io.Reader, output interface{}) error {
 	ctxTimed, cancel := context.WithTimeout(ctx, twitchAPIRequestTimeout)
 	defer cancel()
 

@@ -14,7 +14,7 @@ test:
 # --- Documentation
 
 gendoc: .venv
-	.venv/bin/python3 ci/gendoc.py $(shell grep -l '@module ' *.go) >wiki/Home.md
+	.venv/bin/python3 ci/gendoc.py $(shell grep -l '@module ' pkg/modules/*/*.go) >wiki/Home.md
 
 .venv:
 	python -m venv .venv

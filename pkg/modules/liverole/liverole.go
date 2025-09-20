@@ -1,14 +1,18 @@
-package main
+package liverole
 
 import (
 	"context"
 	"net/url"
 	"strings"
 
+	"github.com/Luzifer/discord-community/pkg/attributestore"
+	"github.com/Luzifer/discord-community/pkg/config"
+	"github.com/Luzifer/discord-community/pkg/helpers"
+	"github.com/Luzifer/discord-community/pkg/modules"
+	"github.com/Luzifer/discord-community/pkg/twitch"
 	"github.com/Luzifer/go_helpers/v2/str"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
-	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,23 +22,25 @@ import (
  */
 
 func init() {
-	RegisterModule("liverole", func() module { return &modLiveRole{} })
+	modules.RegisterModule("liverole", func() modules.Module { return &modLiveRole{} })
 }
 
 type modLiveRole struct {
-	attrs   moduleAttributeStore
+	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
+	config  *config.File
 }
 
 func (m modLiveRole) ID() string { return m.id }
 
-func (m *modLiveRole) Initialize(id string, _ *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
-	m.attrs = attrs
-	m.discord = discord
-	m.id = id
+func (m *modLiveRole) Initialize(args modules.ModuleInitArgs) error {
+	m.attrs = args.Attrs
+	m.discord = args.Discord
+	m.id = args.ID
+	m.config = args.Config
 
-	if err := attrs.Expect(
+	if err := m.attrs.Expect(
 		"role_streamers_live",
 		"twitch_client_id",
 		"twitch_client_secret",
@@ -42,7 +48,7 @@ func (m *modLiveRole) Initialize(id string, _ *cron.Cron, discord *discordgo.Ses
 		return errors.Wrap(err, "validating attributes")
 	}
 
-	discord.AddHandler(m.handlePresenceUpdate)
+	m.discord.AddHandler(m.handlePresenceUpdate)
 
 	return nil
 }
@@ -72,7 +78,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		return
 	}
 
-	if p.GuildID != config.GuildID {
+	if p.GuildID != m.config.GuildID {
 		// Bot is in multiple guilds, we don't have a config for this one
 		return
 	}
@@ -88,7 +94,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	logger = logger.WithField("name", member.User.String())
 
 	// @attr role_streamers optional string "" Only take members with this role ID into account
-	roleStreamer := m.attrs.MustString("role_streamers", ptrStringEmpty)
+	roleStreamer := m.attrs.MustString("role_streamers", helpers.Ptr(""))
 	if roleStreamer != "" && !str.StringInSlice(roleStreamer, member.Roles) {
 		// User is not part of the streamer role
 		return
@@ -135,7 +141,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		return
 	}
 
-	twitch := newTwitchAdapter(
+	t := twitch.New(
 		// @attr twitch_client_id required string "" Twitch client ID the token was issued for
 		m.attrs.MustString("twitch_client_id", nil),
 		// @attr twitch_client_secret required string "" Secret for the Twitch app identified with twitch_client_id
@@ -143,7 +149,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 		"", // No User-Token used
 	)
 
-	streams, err := twitch.GetStreamsForUser(context.Background(), strings.TrimLeft(u.Path, "/"))
+	streams, err := t.GetStreamsForUser(context.Background(), strings.TrimLeft(u.Path, "/"))
 	if err != nil {
 		logger.WithError(err).WithField("user", strings.TrimLeft(u.Path, "/")).Warning("Unable to fetch streams for user")
 		exitFunc = m.removeLiveStreamerRole

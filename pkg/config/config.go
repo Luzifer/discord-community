@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"os"
 	"text/template"
 
+	"github.com/Luzifer/discord-community/pkg/attributestore"
 	korvike "github.com/Luzifer/korvike/functions"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -13,22 +14,24 @@ import (
 )
 
 type (
-	configFile struct {
+	// File represents the contents of a config file
+	File struct {
 		BotToken      string `yaml:"bot_token"`
 		GuildID       string `yaml:"guild_id"`
 		StoreLocation string `yaml:"store_location"`
 
-		ModuleConfigs []moduleConfig `yaml:"module_configs"`
+		ModuleConfigs []ModuleConfig `yaml:"module_configs"`
 	}
 
-	moduleConfig struct {
-		ID         string               `yaml:"id"`
-		Type       string               `yaml:"type"`
-		Attributes moduleAttributeStore `yaml:"attributes"`
+	// ModuleConfig contains the configuration for a module
+	ModuleConfig struct {
+		ID         string                              `yaml:"id"`
+		Type       string                              `yaml:"type"`
+		Attributes attributestore.ModuleAttributeStore `yaml:"attributes"`
 	}
 )
 
-func newConfigFromFile(filename string) (*configFile, error) {
+func NewFromFile(filename string) (*File, error) {
 	f, err := os.Open(filename) //#nosec:G304 // Intended to load specified config
 	if err != nil {
 		return nil, errors.Wrap(err, "opening config file")
@@ -56,7 +59,7 @@ func newConfigFromFile(filename string) (*configFile, error) {
 
 	var (
 		decoder = yaml.NewDecoder(renderedConfig)
-		tmp     configFile
+		tmp     File
 	)
 
 	decoder.KnownFields(true)

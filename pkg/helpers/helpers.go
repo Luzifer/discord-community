@@ -1,25 +1,13 @@
-package main
+package helpers
 
 import (
-	"time"
-
 	"github.com/bwmarrin/discordgo"
 )
 
-var (
-	ptrBoolFalse   = ptrBool(false)
-	ptrInt64Zero   = ptrInt64(0)
-	ptrStringEmpty = ptrString("")
-)
-
-func ptrBool(v bool) *bool                       { return &v }
-func ptrDuration(v time.Duration) *time.Duration { return &v }
-func ptrInt64(v int64) *int64                    { return &v }
-func ptrString(v string) *string                 { return &v }
-func ptrTime(v time.Time) *time.Time             { return &v }
-
+// IsDiscordMessageEmbedEqual compares two MessageEmbed instances for equality
+//
 //nolint:gocognit,gocyclo // This function compares two structs and needs the complexity
-func isDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
+func IsDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 	if a == nil || b == nil {
 		// If one of them is nil, don't do the in-depth analysis
 		return a == b
@@ -120,3 +108,6 @@ func isDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 
 	return true
 }
+
+// Ptr converts a given value to a pointer to its value
+func Ptr[T comparable](v T) *T { return &v }

@@ -11,6 +11,8 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 
+	"github.com/Luzifer/discord-community/pkg/config"
+	"github.com/Luzifer/discord-community/pkg/modules"
 	httpHelpers "github.com/Luzifer/go_helpers/v2/http"
 	"github.com/Luzifer/go_helpers/v2/str"
 	"github.com/Luzifer/rconfig/v2"
@@ -24,8 +26,8 @@ var (
 		VersionAndExit bool   `flag:"version" default:"false" description:"Prints current version and exits"`
 	}{}
 
-	config *configFile
-	store  *metaStore
+	confFile *config.File
+	store    *modules.MetaStore
 
 	version = "dev"
 )
@@ -51,7 +53,7 @@ func main() {
 		crontab       = cron.New()
 		discord       *discordgo.Session
 		err           error
-		activeModules []module
+		activeModules []modules.Module
 	)
 
 	if err = initApp(); err != nil {
@@ -63,27 +65,27 @@ func main() {
 		os.Exit(0)
 	}
 
-	if config, err = newConfigFromFile(cfg.Config); err != nil {
+	if confFile, err = config.NewFromFile(cfg.Config); err != nil {
 		logrus.WithError(err).Fatal("loading config file")
 	}
 
-	if config.StoreLocation == "" {
+	if confFile.StoreLocation == "" {
 		logrus.Fatal("config contains no store location")
 	}
 
-	if store, err = newMetaStoreFromDisk(config.StoreLocation); err != nil {
+	if store, err = modules.NewMetaStoreFromDisk(confFile.StoreLocation); err != nil {
 		logrus.WithError(err).Fatal("loading store")
 	}
 
 	// Connect to Discord
-	if discord, err = discordgo.New(strings.Join([]string{"Bot", config.BotToken}, " ")); err != nil {
+	if discord, err = discordgo.New(strings.Join([]string{"Bot", confFile.BotToken}, " ")); err != nil {
 		logrus.WithError(err).Fatal("creating discord client")
 	}
 
 	discord.Identify.Intents = discordgo.IntentsAll
 
 	var activeIDs []string
-	for i, mc := range config.ModuleConfigs {
+	for i, mc := range confFile.ModuleConfigs {
 		logger := logrus.WithFields(logrus.Fields{
 			"id":     mc.ID,
 			"idx":    i,
@@ -100,12 +102,20 @@ func main() {
 			continue
 		}
 
-		mod := GetModuleByName(mc.Type)
+		mod := modules.GetModuleByName(mc.Type)
 		if mod == nil {
 			logger.Fatal("found configuration for unsupported module")
 		}
 
-		if err = mod.Initialize(mc.ID, crontab, discord, mc.Attributes); err != nil {
+		if err = mod.Initialize(modules.ModuleInitArgs{
+			ID:    mc.ID,
+			Attrs: mc.Attributes,
+
+			Crontab: crontab,
+			Discord: discord,
+			Config:  confFile,
+			Store:   store,
+		}); err != nil {
 			logger.WithError(err).Fatal("initializing module")
 		}
 
@@ -126,7 +136,7 @@ func main() {
 	defer discord.Close() //nolint:errcheck // Will be closed by program exit
 	logrus.Debug("discord connected")
 
-	guild, err := discord.Guild(config.GuildID)
+	guild, err := discord.Guild(confFile.GuildID)
 	if err != nil {
 		logrus.WithError(err).Fatal("getting guild for given guild-id in config: is the bot added and the ID correct?")
 	}

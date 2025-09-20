@@ -1,4 +1,4 @@
-package main
+package reactionrole
 
 import (
 	"fmt"
@@ -7,9 +7,12 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
-	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 
+	"github.com/Luzifer/discord-community/pkg/attributestore"
+	"github.com/Luzifer/discord-community/pkg/config"
+	"github.com/Luzifer/discord-community/pkg/helpers"
+	"github.com/Luzifer/discord-community/pkg/modules"
 	"github.com/Luzifer/go_helpers/v2/env"
 	"github.com/Luzifer/go_helpers/v2/str"
 )
@@ -20,31 +23,35 @@ import (
  */
 
 func init() {
-	RegisterModule("reactionrole", func() module { return &modReactionRole{} })
+	modules.RegisterModule("reactionrole", func() modules.Module { return &modReactionRole{} })
 }
 
 type modReactionRole struct {
-	attrs   moduleAttributeStore
+	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
+	config  *config.File
+	store   *modules.MetaStore
 }
 
 func (m modReactionRole) ID() string { return m.id }
 
-func (m *modReactionRole) Initialize(id string, _ *cron.Cron, discord *discordgo.Session, attrs moduleAttributeStore) error {
-	m.attrs = attrs
-	m.discord = discord
-	m.id = id
+func (m *modReactionRole) Initialize(args modules.ModuleInitArgs) error {
+	m.attrs = args.Attrs
+	m.discord = args.Discord
+	m.id = args.ID
+	m.store = args.Store
+	m.config = args.Config
 
-	if err := attrs.Expect(
+	if err := m.attrs.Expect(
 		"discord_channel_id",
 		"reaction_roles",
 	); err != nil {
 		return errors.Wrap(err, "validating attributes")
 	}
 
-	discord.AddHandler(m.handleMessageReactionAdd)
-	discord.AddHandler(m.handleMessageReactionRemove)
+	m.discord.AddHandler(m.handleMessageReactionAdd)
+	m.discord.AddHandler(m.handleMessageReactionRemove)
 
 	return nil
 }
@@ -57,29 +64,29 @@ func (m modReactionRole) Setup() error {
 	channelID := m.attrs.MustString("discord_channel_id", nil)
 
 	// @attr content optional string "" Message content to post above the embed
-	contentString := m.attrs.MustString("content", ptrStringEmpty)
+	contentString := m.attrs.MustString("content", helpers.Ptr(""))
 
 	var msgEmbed *discordgo.MessageEmbed
 	// @attr embed_title optional string "" Title of the embed (embed will not be added when title is missing)
-	if title := m.attrs.MustString("embed_title", ptrStringEmpty); title != "" {
+	if title := m.attrs.MustString("embed_title", helpers.Ptr("")); title != "" {
 		msgEmbed = &discordgo.MessageEmbed{
 			// @attr embed_color optional int64 "0x2ECC71" Integer / HEX representation of the color for the embed
-			Color: int(m.attrs.MustInt64("embed_color", ptrInt64(streamScheduleDefaultColor))),
+			Color: int(m.attrs.MustInt64("embed_color", helpers.StreamScheduleDefaultColor)),
 			// @attr embed_description optional string "" Description for the embed block
-			Description: strings.TrimSpace(m.attrs.MustString("embed_description", ptrStringEmpty)),
+			Description: strings.TrimSpace(m.attrs.MustString("embed_description", helpers.Ptr(""))),
 			Timestamp:   time.Now().Format(time.RFC3339),
 			Title:       title,
 			Type:        discordgo.EmbedTypeRich,
 		}
 
-		if m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty) != "" {
+		if m.attrs.MustString("embed_thumbnail_url", helpers.Ptr("")) != "" {
 			msgEmbed.Thumbnail = &discordgo.MessageEmbedThumbnail{
 				// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
-				URL: m.attrs.MustString("embed_thumbnail_url", ptrStringEmpty),
+				URL: m.attrs.MustString("embed_thumbnail_url", helpers.Ptr("")),
 				// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
-				Width: int(m.attrs.MustInt64("embed_thumbnail_width", ptrInt64Zero)),
+				Width: int(m.attrs.MustInt64("embed_thumbnail_width", helpers.Ptr(int64(0)))),
 				// @attr embed_thumbnail_height optional int64 "" Height of the thumbnail
-				Height: int(m.attrs.MustInt64("embed_thumbnail_height", ptrInt64Zero)),
+				Height: int(m.attrs.MustInt64("embed_thumbnail_height", helpers.Ptr(int64(0)))),
 			}
 		}
 	}
@@ -94,16 +101,16 @@ func (m modReactionRole) Setup() error {
 	}
 
 	var managedMsg *discordgo.Message
-	if err = store.ReadWithLock(m.id, func(a moduleAttributeStore) error {
+	if err = m.store.ReadWithLock(m.id, func(a attributestore.ModuleAttributeStore) error {
 		mid, err := a.String("message_id")
-		if err == errValueNotSet {
+		if err == attributestore.ErrValueNotSet {
 			return nil
 		}
 
 		managedMsg, err = m.discord.ChannelMessage(channelID, mid)
 		return errors.Wrap(err, "fetching managed message")
 	}); err != nil && !strings.Contains(err.Error(), "404") {
-		return err
+		return fmt.Errorf("getting managed message: %w", err)
 	}
 
 	if managedMsg == nil {
@@ -111,7 +118,7 @@ func (m modReactionRole) Setup() error {
 			Content: contentString,
 			Embed:   msgEmbed,
 		})
-	} else if (len(managedMsg.Embeds) > 0 && !isDiscordMessageEmbedEqual(managedMsg.Embeds[0], msgEmbed)) || managedMsg.Content != contentString {
+	} else if (len(managedMsg.Embeds) > 0 && !helpers.IsDiscordMessageEmbedEqual(managedMsg.Embeds[0], msgEmbed)) || managedMsg.Content != contentString {
 		_, err = m.discord.ChannelMessageEditComplex(&discordgo.MessageEdit{
 			Content: &contentString,
 			Embed:   msgEmbed,
@@ -124,7 +131,7 @@ func (m modReactionRole) Setup() error {
 		return errors.Wrap(err, "updating / creating message")
 	}
 
-	if err = store.Set(m.id, "message_id", managedMsg.ID); err != nil {
+	if err = m.store.Set(m.id, "message_id", managedMsg.ID); err != nil {
 		return errors.Wrap(err, "storing managed message id")
 	}
 
@@ -189,7 +196,7 @@ func (m modReactionRole) handleMessageReaction(_ *discordgo.Session, e *discordg
 		messageID string
 	)
 
-	if err = store.ReadWithLock(m.id, func(a moduleAttributeStore) error {
+	if err = m.store.ReadWithLock(m.id, func(a attributestore.ModuleAttributeStore) error {
 		messageID, err = a.String("message_id")
 		return errors.Wrap(err, "reading message ID")
 	}); err != nil {
@@ -215,14 +222,14 @@ func (m modReactionRole) handleMessageReaction(_ *discordgo.Session, e *discordg
 		}
 
 		if add {
-			if err = m.discord.GuildMemberRoleAdd(config.GuildID, e.UserID, strings.Split(role, ":")[0]); err != nil {
+			if err = m.discord.GuildMemberRoleAdd(m.config.GuildID, e.UserID, strings.Split(role, ":")[0]); err != nil {
 				logrus.WithError(err).Error("Unable to add role to user")
 			}
 			return
 		}
 
 		if !strings.HasSuffix(role, ":set") {
-			if err = m.discord.GuildMemberRoleRemove(config.GuildID, e.UserID, strings.Split(role, ":")[0]); err != nil {
+			if err = m.discord.GuildMemberRoleRemove(m.config.GuildID, e.UserID, strings.Split(role, ":")[0]); err != nil {
 				logrus.WithError(err).Error("Unable to remove role to user")
 			}
 			return
