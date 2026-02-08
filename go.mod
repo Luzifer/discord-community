@@ -5,7 +5,7 @@ go 1.24
 toolchain go1.25.7
 
 require (
-	github.com/Luzifer/go_helpers/v2 v2.25.0
+	github.com/Luzifer/go_helpers/v2 v2.25.2
 	github.com/Luzifer/korvike/functions v1.0.2
 	github.com/Luzifer/rconfig/v2 v2.6.1
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -47,7 +47,7 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	gopkg.in/validator.v2 v2.0.1 // indirect
