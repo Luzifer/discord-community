@@ -176,8 +176,8 @@ func (t Adapter) GetUserByUsername(ctx context.Context, userNames ...string) (*U
 
 func (t Adapter) getAppAccessToken(ctx context.Context) (string, error) {
 	var rData struct {
-		AccessToken  string        `json:"access_token"`
-		RefreshToken string        `json:"refresh_token"`
+		AccessToken  string        `json:"access_token"`  //#nosec:G117 // Intended to work with secrets
+		RefreshToken string        `json:"refresh_token"` //#nosec:G117 // Intended to work with secrets
 		ExpiresIn    int           `json:"expires_in"`
 		Scope        []interface{} `json:"scope"`
 		TokenType    string        `json:"token_type"`
