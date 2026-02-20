@@ -1,3 +1,9 @@
+# 0.14.1 / 2026-02-20
+
+  * fix(deps): update module github.com/luzifer/rconfig/v2 to v2.6.1
+  * fix(deps): update module github.com/sirupsen/logrus to v1.9.4
+  * chore: replace go\_helpers/v2 monolith
+
 # 0.14.0 / 2025-09-20
 
   * refactor: move modules into own packages, cleanup code, modernize code
