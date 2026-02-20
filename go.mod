@@ -1,11 +1,13 @@
 module github.com/Luzifer/discord-community
 
-go 1.24
+go 1.25.7
 
 toolchain go1.26.0
 
 require (
-	github.com/Luzifer/go_helpers/v2 v2.25.2
+	github.com/Luzifer/go_helpers/backoff v0.5.1
+	github.com/Luzifer/go_helpers/env v0.5.1
+	github.com/Luzifer/go_helpers/http v0.12.2
 	github.com/Luzifer/korvike/functions v1.0.2
 	github.com/Luzifer/rconfig/v2 v2.6.1
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -19,6 +21,8 @@ require (
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
+	github.com/Luzifer/go_helpers/accesslogger v0.1.1 // indirect
+	github.com/Luzifer/go_helpers/str v0.5.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

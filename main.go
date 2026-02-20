@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -13,8 +14,7 @@ import (
 
 	"github.com/Luzifer/discord-community/pkg/config"
 	"github.com/Luzifer/discord-community/pkg/modules"
-	httpHelpers "github.com/Luzifer/go_helpers/v2/http"
-	"github.com/Luzifer/go_helpers/v2/str"
+	httpHelpers "github.com/Luzifer/go_helpers/http"
 	"github.com/Luzifer/rconfig/v2"
 )
 
@@ -92,7 +92,7 @@ func main() {
 			"module": mc.Type,
 		})
 
-		if str.StringInSlice(mc.ID, activeIDs) {
+		if slices.Contains(activeIDs, mc.ID) {
 			logger.Error("found duplicate module ID, module will be disabled")
 			continue
 		}

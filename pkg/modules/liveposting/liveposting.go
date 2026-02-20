@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,7 +20,6 @@ import (
 	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
 	"github.com/Luzifer/discord-community/pkg/twitch"
-	"github.com/Luzifer/go_helpers/v2/str"
 )
 
 /*
@@ -191,7 +191,7 @@ func (m *modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo
 
 	// @attr whitelisted_role optional string "" Only post for members of this role ID
 	whitelistedRole := m.attrs.MustString("whitelisted_role", helpers.Ptr(""))
-	if whitelistedRole != "" && !str.StringInSlice(whitelistedRole, member.Roles) {
+	if whitelistedRole != "" && !slices.Contains(member.Roles, whitelistedRole) {
 		// User is not allowed for this config
 		return
 	}

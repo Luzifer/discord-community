@@ -3,6 +3,7 @@ package liverole
 import (
 	"context"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/Luzifer/discord-community/pkg/attributestore"
@@ -10,7 +11,6 @@ import (
 	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
 	"github.com/Luzifer/discord-community/pkg/twitch"
-	"github.com/Luzifer/go_helpers/v2/str"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -61,7 +61,7 @@ func (m modLiveRole) addLiveStreamerRole(guildID, userID string, presentRoles []
 	if roleID == "" {
 		return errors.New("empty live-role-id")
 	}
-	if str.StringInSlice(roleID, presentRoles) {
+	if slices.Contains(presentRoles, roleID) {
 		// Already there fine!
 		return nil
 	}
@@ -95,7 +95,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 
 	// @attr role_streamers optional string "" Only take members with this role ID into account
 	roleStreamer := m.attrs.MustString("role_streamers", helpers.Ptr(""))
-	if roleStreamer != "" && !str.StringInSlice(roleStreamer, member.Roles) {
+	if roleStreamer != "" && !slices.Contains(member.Roles, roleStreamer) {
 		// User is not part of the streamer role
 		return
 	}
@@ -168,7 +168,7 @@ func (m modLiveRole) removeLiveStreamerRole(guildID, userID string, presentRoles
 	if roleID == "" {
 		return errors.New("empty live-role-id")
 	}
-	if !str.StringInSlice(roleID, presentRoles) {
+	if !slices.Contains(presentRoles, roleID) {
 		// Not there: fine!
 		return nil
 	}

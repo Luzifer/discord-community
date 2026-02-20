@@ -1,6 +1,7 @@
 package clearchannel
 
 import (
+	"slices"
 	"sort"
 	"strconv"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/Luzifer/discord-community/pkg/attributestore"
 	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
-	"github.com/Luzifer/go_helpers/v2/str"
 )
 
 /*
@@ -114,12 +114,12 @@ func (m modClearChannel) cronClearChannel() {
 				break
 			}
 
-			if len(onlyUsers) > 0 && !str.StringInSlice(msg.Author.ID, onlyUsers) {
+			if len(onlyUsers) > 0 && !slices.Contains(onlyUsers, msg.Author.ID) {
 				// Is not written by one of the users we may purge
 				continue
 			}
 
-			if len(protectUsers) > 0 && str.StringInSlice(msg.Author.ID, protectUsers) {
+			if len(protectUsers) > 0 && slices.Contains(protectUsers, msg.Author.ID) {
 				// Is written by protected user, we may not purge
 				continue
 			}

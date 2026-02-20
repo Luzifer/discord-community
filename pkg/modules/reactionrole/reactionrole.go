@@ -2,6 +2,7 @@ package reactionrole
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -13,8 +14,7 @@ import (
 	"github.com/Luzifer/discord-community/pkg/config"
 	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
-	"github.com/Luzifer/go_helpers/v2/env"
-	"github.com/Luzifer/go_helpers/v2/str"
+	"github.com/Luzifer/go_helpers/env"
 )
 
 /*
@@ -138,10 +138,10 @@ func (m modReactionRole) Setup() error {
 	var addedReactions []string
 
 	for _, r := range managedMsg.Reactions {
-		okName := str.StringInSlice(r.Emoji.Name, reactionList)
+		okName := slices.Contains(reactionList, r.Emoji.Name)
 
 		compiledName := fmt.Sprintf(":%s:%s", r.Emoji.Name, r.Emoji.ID)
-		okCode := str.StringInSlice(compiledName, reactionList)
+		okCode := slices.Contains(reactionList, compiledName)
 
 		if !okCode && !okName {
 			id := r.Emoji.ID
@@ -159,7 +159,7 @@ func (m modReactionRole) Setup() error {
 	}
 
 	for _, emoji := range reactionList {
-		if !str.StringInSlice(emoji, addedReactions) {
+		if !slices.Contains(addedReactions, emoji) {
 			logrus.WithFields(logrus.Fields{
 				"emote":   emoji,
 				"message": managedMsg.ID,
