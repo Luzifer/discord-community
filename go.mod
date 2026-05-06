@@ -5,9 +5,9 @@ go 1.26
 toolchain go1.26.2
 
 require (
-	github.com/Luzifer/go_helpers/backoff v0.5.1
-	github.com/Luzifer/go_helpers/env v0.5.1
-	github.com/Luzifer/go_helpers/http v0.12.3
+	github.com/Luzifer/go_helpers/backoff v0.5.2
+	github.com/Luzifer/go_helpers/env v0.5.2
+	github.com/Luzifer/go_helpers/http v0.12.4
 	github.com/Luzifer/korvike/functions v1.0.2
 	github.com/Luzifer/rconfig/v2 v2.6.1
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -21,7 +21,6 @@ require (
 require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/Luzifer/go_helpers/accesslogger v0.1.1 // indirect
-	github.com/Luzifer/go_helpers/str v0.5.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -43,7 +42,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
