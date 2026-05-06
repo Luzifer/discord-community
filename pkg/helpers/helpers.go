@@ -13,7 +13,7 @@ func IsDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 		return a == b
 	}
 
-	checks := [][2]interface{}{
+	checks := [][2]any{
 		// Base-Struct
 		{a.Type, b.Type},
 		{a.URL, b.URL},
@@ -43,14 +43,14 @@ func IsDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 	}
 
 	if a.Footer != nil {
-		checks = append(checks, [][2]interface{}{
+		checks = append(checks, [][2]any{
 			{a.Footer.IconURL, b.Footer.IconURL},
 			{a.Footer.Text, b.Footer.Text},
 		}...)
 	}
 
 	if a.Image != nil {
-		checks = append(checks, [][2]interface{}{
+		checks = append(checks, [][2]any{
 			{a.Image.URL, b.Image.URL},
 			{a.Image.Width, b.Image.Width},
 			{a.Image.Height, b.Image.Height},
@@ -58,7 +58,7 @@ func IsDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 	}
 
 	if a.Thumbnail != nil {
-		checks = append(checks, [][2]interface{}{
+		checks = append(checks, [][2]any{
 			{a.Thumbnail.URL, b.Thumbnail.URL},
 			{a.Thumbnail.Width, b.Thumbnail.Width},
 			{a.Thumbnail.Height, b.Thumbnail.Height},
@@ -66,7 +66,7 @@ func IsDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 	}
 
 	if a.Video != nil {
-		checks = append(checks, [][2]interface{}{
+		checks = append(checks, [][2]any{
 			{a.Video.URL, b.Video.URL},
 			{a.Video.Width, b.Video.Width},
 			{a.Video.Height, b.Video.Height},
@@ -74,14 +74,14 @@ func IsDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 	}
 
 	if a.Provider != nil {
-		checks = append(checks, [][2]interface{}{
+		checks = append(checks, [][2]any{
 			{a.Provider.URL, b.Provider.URL},
 			{a.Provider.Name, b.Provider.Name},
 		}...)
 	}
 
 	if a.Author != nil {
-		checks = append(checks, [][2]interface{}{
+		checks = append(checks, [][2]any{
 			{a.Author.URL, b.Author.URL},
 			{a.Author.Name, b.Author.Name},
 			{a.Author.IconURL, b.Author.IconURL},
@@ -93,7 +93,7 @@ func IsDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 	}
 
 	for i := range a.Fields {
-		checks = append(checks, [][2]interface{}{
+		checks = append(checks, [][2]any{
 			{a.Fields[i].Name, b.Fields[i].Name},
 			{a.Fields[i].Value, b.Fields[i].Value},
 			{a.Fields[i].Inline, b.Fields[i].Inline},
@@ -108,6 +108,3 @@ func IsDiscordMessageEmbedEqual(a, b *discordgo.MessageEmbed) bool {
 
 	return true
 }
-
-// Ptr converts a given value to a pointer to its value
-func Ptr[T comparable](v T) *T { return &v }

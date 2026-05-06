@@ -1,13 +1,16 @@
+// Package modules provides module registration and shared module state handling.
 package modules
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"sync"
 
-	"github.com/Luzifer/discord-community/pkg/attributestore"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/Luzifer/discord-community/pkg/attributestore"
 )
 
 // MetaStore holds the data stored by modules and serializes it
@@ -22,7 +25,7 @@ type MetaStore struct {
 // a new MetaStore instance with that data
 func NewMetaStoreFromDisk(filename string) (*MetaStore, error) {
 	out := &MetaStore{
-		ModuleAttributes: map[string]attributestore.ModuleAttributeStore{},
+		ModuleAttributes: make(map[string]attributestore.ModuleAttributeStore),
 		filename:         filename,
 	}
 
@@ -36,7 +39,7 @@ func NewMetaStoreFromDisk(filename string) (*MetaStore, error) {
 		return out, nil
 
 	default:
-		return nil, errors.Wrap(err, "getting file stats for store")
+		return nil, fmt.Errorf("getting file stats for store: %w", err)
 	}
 
 	if s.IsDir() {
@@ -51,7 +54,7 @@ func NewMetaStoreFromDisk(filename string) (*MetaStore, error) {
 
 	f, err := os.Open(filename) //#nosec:G304 // Intended to open store location
 	if err != nil {
-		return nil, errors.Wrap(err, "opening store")
+		return nil, fmt.Errorf("opening store: %w", err)
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
@@ -59,49 +62,11 @@ func NewMetaStoreFromDisk(filename string) (*MetaStore, error) {
 		}
 	}()
 
-	return out, errors.Wrap(
-		json.NewDecoder(f).Decode(out),
-		"decoding store",
-	)
-}
-
-// Save stores the data to disk
-func (m *MetaStore) Save() error {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	return m.save()
-}
-
-func (m *MetaStore) save() error { //revive:disable-line:confusing-naming
-	f, err := os.Create(m.filename)
-	if err != nil {
-		return errors.Wrap(err, "creating storage file")
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			logrus.WithError(err).Error("closing store (write)")
-		}
-	}()
-
-	return errors.Wrap(
-		json.NewEncoder(f).Encode(m),
-		"encoding storage file",
-	)
-}
-
-// Set stores the given value for the given key and module ID
-func (m *MetaStore) Set(moduleID, key string, value interface{}) error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	if m.ModuleAttributes[moduleID] == nil {
-		m.ModuleAttributes[moduleID] = make(attributestore.ModuleAttributeStore)
+	if err = json.NewDecoder(f).Decode(out); err != nil {
+		return nil, fmt.Errorf("decoding store: %w", err)
 	}
 
-	m.ModuleAttributes[moduleID][key] = value
-
-	return errors.Wrap(m.save(), "saving store")
+	return out, nil
 }
 
 // ReadWithLock returns the ModuleAttributeStore for the given module ID
@@ -115,4 +80,48 @@ func (m *MetaStore) ReadWithLock(moduleID string, fn func(m attributestore.Modul
 	}
 
 	return fn(m.ModuleAttributes[moduleID])
+}
+
+// Save stores the data to disk
+func (m *MetaStore) Save() error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	return m.save()
+}
+
+// Set stores the given value for the given key and module ID
+func (m *MetaStore) Set(moduleID, key string, value any) (err error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if m.ModuleAttributes[moduleID] == nil {
+		m.ModuleAttributes[moduleID] = make(attributestore.ModuleAttributeStore)
+	}
+
+	m.ModuleAttributes[moduleID][key] = value
+
+	if err = m.save(); err != nil {
+		return fmt.Errorf("saving store: %w", err)
+	}
+
+	return nil
+}
+
+func (m *MetaStore) save() error { //revive:disable-line:confusing-naming // exported has locking for other packages
+	f, err := os.Create(m.filename)
+	if err != nil {
+		return fmt.Errorf("creating storage file: %w", err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			logrus.WithError(err).Error("closing store (write)")
+		}
+	}()
+
+	if err = json.NewEncoder(f).Encode(m); err != nil {
+		return fmt.Errorf("encoding storage file: %w", err)
+	}
+
+	return nil
 }

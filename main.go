@@ -1,3 +1,4 @@
+// Discord Community Bot
 package main
 
 import (
@@ -8,14 +9,14 @@ import (
 	"strings"
 	"time"
 
+	httphelpers "github.com/Luzifer/go_helpers/http"
+	"github.com/Luzifer/rconfig/v2"
 	"github.com/bwmarrin/discordgo"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/discord-community/pkg/config"
 	"github.com/Luzifer/discord-community/pkg/modules"
-	httpHelpers "github.com/Luzifer/go_helpers/http"
-	"github.com/Luzifer/rconfig/v2"
 )
 
 var (
@@ -47,7 +48,7 @@ func initApp() (err error) {
 	return nil
 }
 
-//nolint:funlen,gocyclo
+//nolint:funlen,gocyclo // setup, makes sense to keep together
 func main() {
 	var (
 		crontab       = cron.New()
@@ -61,7 +62,7 @@ func main() {
 	}
 
 	if cfg.VersionAndExit {
-		fmt.Printf("discord-community %s\n", version) //nolint:forbidigo
+		fmt.Printf("discord-community %s\n", version) //nolint:forbidigo // fine for printing versions
 		os.Exit(0)
 	}
 
@@ -156,8 +157,8 @@ func main() {
 
 	// Run HTTP server
 	var h http.Handler = http.DefaultServeMux
-	h = httpHelpers.GzipHandler(h)
-	h = httpHelpers.NewHTTPLogHandler(h)
+	h = httphelpers.GzipHandler(h)
+	h = httphelpers.NewHTTPLogHandler(h)
 
 	server := &http.Server{
 		Addr:              cfg.Listen,

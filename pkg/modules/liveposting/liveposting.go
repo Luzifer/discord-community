@@ -1,3 +1,4 @@
+// Package liveposting implements a module for announcing Twitch live streams.
 package liveposting
 
 import (
@@ -12,12 +13,10 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/discord-community/pkg/attributestore"
 	"github.com/Luzifer/discord-community/pkg/config"
-	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
 	"github.com/Luzifer/discord-community/pkg/twitch"
 )
@@ -37,10 +36,6 @@ const (
 	livePostingTwitchColor            = 0x6441a5
 )
 
-func init() {
-	modules.RegisterModule("liveposting", func() modules.Module { return &modLivePosting{} })
-}
-
 type modLivePosting struct {
 	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
@@ -49,6 +44,10 @@ type modLivePosting struct {
 	config *config.File
 
 	lock sync.Mutex
+}
+
+func init() {
+	modules.RegisterModule("liveposting", func() modules.Module { return &modLivePosting{} })
 }
 
 func (m *modLivePosting) ID() string { return m.id }
@@ -65,18 +64,18 @@ func (m *modLivePosting) Initialize(args modules.ModuleInitArgs) error {
 		"twitch_client_id",
 		"twitch_client_secret",
 	); err != nil {
-		return errors.Wrap(err, "validating attributes")
+		return fmt.Errorf("validating attributes: %w", err)
 	}
 
 	// @attr disable_presence optional bool "false" Disable posting live-postings for discord presence changes
-	if !m.attrs.MustBool("disable_presence", helpers.Ptr(false)) {
+	if !m.attrs.MustBool("disable_presence", new(false)) {
 		m.discord.AddHandler(m.handlePresenceUpdate)
 	}
 
 	// @attr cron optional string "*/5 * * * *" Fetch live status of `poll_usernames` (set to empty string to disable): keep this below `stream_freshness` or you might miss streams
-	if cronDirective := args.Attrs.MustString("cron", helpers.Ptr("*/5 * * * *")); cronDirective != "" {
+	if cronDirective := args.Attrs.MustString("cron", new("*/5 * * * *")); cronDirective != "" {
 		if _, err := args.Crontab.AddFunc(cronDirective, m.cronFetchChannelStatus); err != nil {
-			return errors.Wrap(err, "adding cron function")
+			return fmt.Errorf("adding cron function: %w", err)
 		}
 	}
 
@@ -117,12 +116,12 @@ func (m *modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 
 	users, err := t.GetUserByUsername(context.Background(), usernames...)
 	if err != nil {
-		return errors.Wrap(err, "fetching twitch user details")
+		return fmt.Errorf("fetching twitch user details: %w", err)
 	}
 
 	streams, err := t.GetStreamsForUser(context.Background(), usernames...)
 	if err != nil {
-		return errors.Wrap(err, "fetching streams for user")
+		return fmt.Errorf("fetching streams for user: %w", err)
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -131,7 +130,7 @@ func (m *modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 	}).Trace("Found active streams from users")
 
 	// @attr stream_freshness optional duration "5m" How long after stream start to post shoutout
-	streamFreshness := m.attrs.MustDuration("stream_freshness", helpers.Ptr(livePostingDefaultStreamFreshness))
+	streamFreshness := m.attrs.MustDuration("stream_freshness", new(livePostingDefaultStreamFreshness))
 
 	for _, stream := range streams.Data {
 		for _, user := range users.Data {
@@ -160,7 +159,7 @@ func (m *modLivePosting) fetchAndPostForUsername(usernames ...string) error {
 				stream.ThumbnailURL,
 				user.ProfileImageURL,
 			); err != nil {
-				return errors.Wrap(err, "sending post")
+				return fmt.Errorf("sending post: %w", err)
 			}
 		}
 	}
@@ -190,7 +189,7 @@ func (m *modLivePosting) handlePresenceUpdate(d *discordgo.Session, p *discordgo
 	}
 
 	// @attr whitelisted_role optional string "" Only post for members of this role ID
-	whitelistedRole := m.attrs.MustString("whitelisted_role", helpers.Ptr(""))
+	whitelistedRole := m.attrs.MustString("whitelisted_role", new(""))
 	if whitelistedRole != "" && !slices.Contains(member.Roles, whitelistedRole) {
 		// User is not allowed for this config
 		return
@@ -255,10 +254,10 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 
 	msgs, err := m.discord.ChannelMessages(channelID, livePostingNumberOfMessagesToLoad, "", "", "")
 	if err != nil {
-		return errors.Wrap(err, "fetching previous messages")
+		return fmt.Errorf("fetching previous messages: %w", err)
 	}
 
-	ignoreTime := m.attrs.MustDuration("stream_freshness", helpers.Ptr(livePostingDefaultStreamFreshness))
+	ignoreTime := m.attrs.MustDuration("stream_freshness", new(livePostingDefaultStreamFreshness))
 	for _, msg := range msgs {
 		if msg.Content != postText {
 			// Post is for another channel / is another message
@@ -272,14 +271,14 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 		}
 
 		// @attr remove_old optional bool "false" If set to `true` older message with same content will be deleted
-		if !m.attrs.MustBool("remove_old", helpers.Ptr(false)) {
+		if !m.attrs.MustBool("remove_old", new(false)) {
 			// We're not allowed to purge the old message
 			continue
 		}
 
 		// Purge the old message
 		if err = m.discord.ChannelMessageDelete(channelID, msg.ID); err != nil {
-			return errors.Wrap(err, "deleting old message")
+			return fmt.Errorf("deleting old message: %w", err)
 		}
 	}
 
@@ -292,7 +291,7 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 		).Replace(previewImage),
 	)
 	if err != nil {
-		return errors.Wrap(err, "parsing stream preview URL")
+		return fmt.Errorf("parsing stream preview URL: %w", err)
 	}
 
 	previewImageQuery := previewImageURL.Query()
@@ -300,7 +299,7 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 	previewImageURL.RawQuery = previewImageQuery.Encode()
 
 	// @attr preserve_proxy optional string "" URL prefix of a Luzifer/preserve proxy to cache stream preview for longer
-	if proxy, err := url.Parse(m.attrs.MustString("preserve_proxy", helpers.Ptr(""))); err == nil && proxy.String() != "" {
+	if proxy, err := url.Parse(m.attrs.MustString("preserve_proxy", new(""))); err == nil && proxy.String() != "" {
 		// Discord screws up the plain-text URL format, so we need to use the b64-format
 		proxy.Path = "/b64:" + base64.URLEncoding.EncodeToString([]byte(previewImageURL.String()))
 		previewImageURL = proxy
@@ -337,14 +336,14 @@ func (m *modLivePosting) sendLivePost(username, displayName, title, game, previe
 		Embed:   msgEmbed,
 	})
 	if err != nil {
-		return errors.Wrap(err, "sending message")
+		return fmt.Errorf("sending message: %w", err)
 	}
 
 	// @attr auto_publish optional bool "false" Automatically publish (crosspost) the message to followers of the channel
-	if m.attrs.MustBool("auto_publish", helpers.Ptr(false)) {
+	if m.attrs.MustBool("auto_publish", new(false)) {
 		logger.Debug("Auto-Publishing live-post")
 		if _, err = m.discord.ChannelMessageCrosspost(channelID, msg.ID); err != nil {
-			return errors.Wrap(err, "publishing message")
+			return fmt.Errorf("publishing message: %w", err)
 		}
 	}
 

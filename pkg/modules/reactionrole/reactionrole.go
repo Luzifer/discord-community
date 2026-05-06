@@ -1,3 +1,4 @@
+// Package reactionrole implements a module for Discord reaction-based role assignment.
 package reactionrole
 
 import (
@@ -6,15 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Luzifer/go_helpers/env"
 	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/discord-community/pkg/attributestore"
 	"github.com/Luzifer/discord-community/pkg/config"
 	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
-	"github.com/Luzifer/go_helpers/env"
 )
 
 /*
@@ -22,16 +22,16 @@ import (
  * @module_desc Creates a post with pre-set reactions and assigns roles on reaction
  */
 
-func init() {
-	modules.RegisterModule("reactionrole", func() modules.Module { return &modReactionRole{} })
-}
-
 type modReactionRole struct {
 	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
 	config  *config.File
 	store   *modules.MetaStore
+}
+
+func init() {
+	modules.RegisterModule("reactionrole", func() modules.Module { return &modReactionRole{} })
 }
 
 func (m modReactionRole) ID() string { return m.id }
@@ -47,7 +47,7 @@ func (m *modReactionRole) Initialize(args modules.ModuleInitArgs) error {
 		"discord_channel_id",
 		"reaction_roles",
 	); err != nil {
-		return errors.Wrap(err, "validating attributes")
+		return fmt.Errorf("validating attributes: %w", err)
 	}
 
 	m.discord.AddHandler(m.handleMessageReactionAdd)
@@ -64,36 +64,36 @@ func (m modReactionRole) Setup() error {
 	channelID := m.attrs.MustString("discord_channel_id", nil)
 
 	// @attr content optional string "" Message content to post above the embed
-	contentString := m.attrs.MustString("content", helpers.Ptr(""))
+	contentString := m.attrs.MustString("content", new(""))
 
 	var msgEmbed *discordgo.MessageEmbed
 	// @attr embed_title optional string "" Title of the embed (embed will not be added when title is missing)
-	if title := m.attrs.MustString("embed_title", helpers.Ptr("")); title != "" {
+	if title := m.attrs.MustString("embed_title", new("")); title != "" {
 		msgEmbed = &discordgo.MessageEmbed{
 			// @attr embed_color optional int64 "0x2ECC71" Integer / HEX representation of the color for the embed
 			Color: int(m.attrs.MustInt64("embed_color", helpers.StreamScheduleDefaultColor)),
 			// @attr embed_description optional string "" Description for the embed block
-			Description: strings.TrimSpace(m.attrs.MustString("embed_description", helpers.Ptr(""))),
+			Description: strings.TrimSpace(m.attrs.MustString("embed_description", new(""))),
 			Timestamp:   time.Now().Format(time.RFC3339),
 			Title:       title,
 			Type:        discordgo.EmbedTypeRich,
 		}
 
-		if m.attrs.MustString("embed_thumbnail_url", helpers.Ptr("")) != "" {
+		if m.attrs.MustString("embed_thumbnail_url", new("")) != "" {
 			msgEmbed.Thumbnail = &discordgo.MessageEmbedThumbnail{
 				// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
-				URL: m.attrs.MustString("embed_thumbnail_url", helpers.Ptr("")),
+				URL: m.attrs.MustString("embed_thumbnail_url", new("")),
 				// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
-				Width: int(m.attrs.MustInt64("embed_thumbnail_width", helpers.Ptr(int64(0)))),
+				Width: int(m.attrs.MustInt64("embed_thumbnail_width", new(int64(0)))),
 				// @attr embed_thumbnail_height optional int64 "" Height of the thumbnail
-				Height: int(m.attrs.MustInt64("embed_thumbnail_height", helpers.Ptr(int64(0)))),
+				Height: int(m.attrs.MustInt64("embed_thumbnail_height", new(int64(0)))),
 			}
 		}
 	}
 
 	reactionListRaw, err := m.attrs.StringSlice("reaction_roles")
 	if err != nil {
-		return errors.Wrap(err, "getting role list")
+		return fmt.Errorf("getting role list: %w", err)
 	}
 	var reactionList []string
 	for _, r := range reactionListRaw {
@@ -107,8 +107,11 @@ func (m modReactionRole) Setup() error {
 			return nil
 		}
 
-		managedMsg, err = m.discord.ChannelMessage(channelID, mid)
-		return errors.Wrap(err, "fetching managed message")
+		if managedMsg, err = m.discord.ChannelMessage(channelID, mid); err != nil {
+			return fmt.Errorf("fetching managed message: %w", err)
+		}
+
+		return nil
 	}); err != nil && !strings.Contains(err.Error(), "404") {
 		return fmt.Errorf("getting managed message: %w", err)
 	}
@@ -128,11 +131,11 @@ func (m modReactionRole) Setup() error {
 		})
 	}
 	if err != nil {
-		return errors.Wrap(err, "updating / creating message")
+		return fmt.Errorf("updating / creating message: %w", err)
 	}
 
 	if err = m.store.Set(m.id, "message_id", managedMsg.ID); err != nil {
-		return errors.Wrap(err, "storing managed message id")
+		return fmt.Errorf("storing managed message id: %w", err)
 	}
 
 	var addedReactions []string
@@ -150,7 +153,7 @@ func (m modReactionRole) Setup() error {
 			}
 
 			if err = m.discord.MessageReactionsRemoveEmoji(channelID, managedMsg.ID, id); err != nil {
-				return errors.Wrap(err, "removing reaction emoji")
+				return fmt.Errorf("removing reaction emoji: %w", err)
 			}
 			continue
 		}
@@ -166,7 +169,7 @@ func (m modReactionRole) Setup() error {
 				"module":  m.id,
 			}).Trace("Adding emoji reaction")
 			if err = m.discord.MessageReactionAdd(channelID, managedMsg.ID, emoji); err != nil {
-				return errors.Wrap(err, "adding reaction emoji")
+				return fmt.Errorf("adding reaction emoji: %w", err)
 			}
 		}
 	}
@@ -178,13 +181,13 @@ func (m modReactionRole) extractRoles() (map[string]string, error) {
 	// @attr reaction_roles required []string "" List of strings in format `emote=role-id[:set]`. `emote` equals an unicode emote (✅) or a custom emote in form `:<emote-name>:<emote-id>`. `role-id` is the integer ID of the guilds role to add with this emote. If `:set` is added at the end, the role will only be added but not removed when the reaction is removed.
 	list, err := m.attrs.StringSlice("reaction_roles")
 	if err != nil {
-		return nil, errors.Wrap(err, "getting role list")
+		return nil, fmt.Errorf("getting role list: %w", err)
 	}
 
 	return env.ListToMap(list), nil
 }
 
-//revive:disable-next-line:flag-parameter
+//revive:disable-next-line:flag-parameter // not a flag, just telling whether a reaction was added or removed
 func (m modReactionRole) handleMessageReaction(_ *discordgo.Session, e *discordgo.MessageReaction, add bool) {
 	if e.UserID == m.discord.State.User.ID {
 		// Reaction was manipulated by the bot, ignore
@@ -197,8 +200,11 @@ func (m modReactionRole) handleMessageReaction(_ *discordgo.Session, e *discordg
 	)
 
 	if err = m.store.ReadWithLock(m.id, func(a attributestore.ModuleAttributeStore) error {
-		messageID, err = a.String("message_id")
-		return errors.Wrap(err, "reading message ID")
+		if messageID, err = a.String("message_id"); err != nil {
+			return fmt.Errorf("reading message ID: %w", err)
+		}
+
+		return nil
 	}); err != nil {
 		logrus.WithError(err).Error("Unable to get managed message ID")
 		return

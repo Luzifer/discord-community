@@ -1,3 +1,4 @@
+// Package twitch provides the Twitch API client used by modules.
 package twitch
 
 import (
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	"github.com/Luzifer/go_helpers/backoff"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -118,11 +118,8 @@ func (t Adapter) GetChannelStreamSchedule(ctx context.Context, broadcasterID str
 
 	if err := backoff.NewBackoff().
 		WithMaxIterations(twitchAPIRequestLimit).
-		Retry(func() error {
-			return errors.Wrap(
-				t.request(ctx, http.MethodGet, "/helix/schedule", params, nil, out),
-				"fetching schedule",
-			)
+		Retry(func() (err error) {
+			return t.request(ctx, http.MethodGet, "/helix/schedule", params, nil, out)
 		}); err != nil {
 		return nil, fmt.Errorf("getting schedule: %w", err)
 	}
@@ -141,10 +138,7 @@ func (t Adapter) GetStreamsForUser(ctx context.Context, userNames ...string) (*S
 	if err := backoff.NewBackoff().
 		WithMaxIterations(twitchAPIRequestLimit).
 		Retry(func() error {
-			return errors.Wrap(
-				t.request(ctx, http.MethodGet, "/helix/streams", params, nil, out),
-				"fetching streams",
-			)
+			return t.request(ctx, http.MethodGet, "/helix/streams", params, nil, out)
 		}); err != nil {
 		return nil, fmt.Errorf("getting streams: %w", err)
 	}
@@ -163,10 +157,7 @@ func (t Adapter) GetUserByUsername(ctx context.Context, userNames ...string) (*U
 	if err := backoff.NewBackoff().
 		WithMaxIterations(twitchAPIRequestLimit).
 		Retry(func() error {
-			return errors.Wrap(
-				t.request(ctx, http.MethodGet, "/helix/users", params, nil, out),
-				"fetching user",
-			)
+			return t.request(ctx, http.MethodGet, "/helix/users", params, nil, out)
 		}); err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
@@ -176,11 +167,11 @@ func (t Adapter) GetUserByUsername(ctx context.Context, userNames ...string) (*U
 
 func (t Adapter) getAppAccessToken(ctx context.Context) (string, error) {
 	var rData struct {
-		AccessToken  string        `json:"access_token"`  //#nosec:G117 // Intended to work with secrets
-		RefreshToken string        `json:"refresh_token"` //#nosec:G117 // Intended to work with secrets
-		ExpiresIn    int           `json:"expires_in"`
-		Scope        []interface{} `json:"scope"`
-		TokenType    string        `json:"token_type"`
+		AccessToken  string `json:"access_token"`  //#nosec:G117 // Intended to work with secrets
+		RefreshToken string `json:"refresh_token"` //#nosec:G117 // Intended to work with secrets
+		ExpiresIn    int    `json:"expires_in"`
+		Scope        []any  `json:"scope"`
+		TokenType    string `json:"token_type"`
 	}
 
 	params := make(url.Values)
@@ -194,7 +185,7 @@ func (t Adapter) getAppAccessToken(ctx context.Context) (string, error) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), nil)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", errors.Wrap(err, "fetching response")
+		return "", fmt.Errorf("fetching response: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -205,18 +196,19 @@ func (t Adapter) getAppAccessToken(ctx context.Context) (string, error) {
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return "", errors.Wrapf(err, "unexpected status %d and cannot read body", resp.StatusCode)
+			return "", fmt.Errorf("unexpected status %d and cannot read body: %w", resp.StatusCode, err)
 		}
-		return "", errors.Errorf("unexpected status %d: %s", resp.StatusCode, body)
+		return "", fmt.Errorf("unexpected status %d: %s", resp.StatusCode, body)
 	}
 
-	return rData.AccessToken, errors.Wrap(
-		json.NewDecoder(resp.Body).Decode(&rData),
-		"decoding response",
-	)
+	if err = json.NewDecoder(resp.Body).Decode(&rData); err != nil {
+		return "", fmt.Errorf("decoding response: %w", err)
+	}
+
+	return rData.AccessToken, nil
 }
 
-func (t Adapter) request(ctx context.Context, method, path string, params url.Values, body io.Reader, output interface{}) error {
+func (t Adapter) request(ctx context.Context, method, path string, params url.Values, body io.Reader, output any) error {
 	ctxTimed, cancel := context.WithTimeout(ctx, twitchAPIRequestTimeout)
 	defer cancel()
 
@@ -236,14 +228,14 @@ func (t Adapter) request(ctx context.Context, method, path string, params url.Va
 	if t.token == "" {
 		accessToken, err := t.getAppAccessToken(ctx)
 		if err != nil {
-			return errors.Wrap(err, "fetching app-access-token")
+			return fmt.Errorf("fetching app-access-token: %w", err)
 		}
 		req.Header.Set("Authorization", strings.Join([]string{"Bearer", accessToken}, " "))
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "fetching response")
+		return fmt.Errorf("fetching response: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -254,17 +246,18 @@ func (t Adapter) request(ctx context.Context, method, path string, params url.Va
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return errors.Wrapf(err, "unexpected status %d and cannot read body", resp.StatusCode)
+			return fmt.Errorf("unexpected status %d and cannot read body: %w", resp.StatusCode, err)
 		}
-		return errors.Errorf("unexpected status %d: %s", resp.StatusCode, body)
+		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, body)
 	}
 
 	if output == nil {
 		return nil
 	}
 
-	return errors.Wrap(
-		json.NewDecoder(resp.Body).Decode(output),
-		"decoding response",
-	)
+	if err = json.NewDecoder(resp.Body).Decode(output); err != nil {
+		return fmt.Errorf("decoding response: %w", err)
+	}
+
+	return nil
 }

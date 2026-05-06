@@ -1,16 +1,18 @@
+// Package config loads and validates the bot configuration file.
 package config
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"text/template"
 
-	"github.com/Luzifer/discord-community/pkg/attributestore"
 	korvike "github.com/Luzifer/korvike/functions"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.yaml.in/yaml/v3"
+
+	"github.com/Luzifer/discord-community/pkg/attributestore"
 )
 
 type (
@@ -35,7 +37,7 @@ type (
 func NewFromFile(filename string) (*File, error) {
 	f, err := os.Open(filename) //#nosec:G304 // Intended to load specified config
 	if err != nil {
-		return nil, errors.Wrap(err, "opening config file")
+		return nil, fmt.Errorf("opening config file: %w", err)
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
@@ -45,17 +47,17 @@ func NewFromFile(filename string) (*File, error) {
 
 	configContent, err := io.ReadAll(f)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading config file")
+		return nil, fmt.Errorf("reading config file: %w", err)
 	}
 
 	tpl, err := template.New("config").Funcs(korvike.GetFunctionMap()).Parse(string(configContent))
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing config file template")
+		return nil, fmt.Errorf("parsing config file template: %w", err)
 	}
 
 	renderedConfig := new(bytes.Buffer)
 	if err = tpl.Execute(renderedConfig, nil); err != nil {
-		return nil, errors.Wrap(err, "rendering config template")
+		return nil, fmt.Errorf("rendering config template: %w", err)
 	}
 
 	var (
@@ -64,5 +66,9 @@ func NewFromFile(filename string) (*File, error) {
 	)
 
 	decoder.KnownFields(true)
-	return &tmp, errors.Wrap(decoder.Decode(&tmp), "decoding config")
+	if err = decoder.Decode(&tmp); err != nil {
+		return nil, fmt.Errorf("decoding config: %w", err)
+	}
+
+	return &tmp, nil
 }

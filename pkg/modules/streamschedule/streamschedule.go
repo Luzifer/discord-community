@@ -1,3 +1,4 @@
+// Package streamschedule implements a module for posting Twitch schedules to Discord.
 package streamschedule
 
 import (
@@ -8,14 +9,14 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/Masterminds/sprig/v3"
+	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
+
 	"github.com/Luzifer/discord-community/pkg/attributestore"
 	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
 	"github.com/Luzifer/discord-community/pkg/twitch"
-	"github.com/Masterminds/sprig/v3"
-	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -23,15 +24,15 @@ import (
  * @module_desc Posts stream schedule derived from Twitch schedule as embed in Discord channel
  */
 
-func init() {
-	modules.RegisterModule("schedule", func() modules.Module { return &modStreamSchedule{} })
-}
-
 type modStreamSchedule struct {
 	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
 	store   *modules.MetaStore
+}
+
+func init() {
+	modules.RegisterModule("schedule", func() modules.Module { return &modStreamSchedule{} })
 }
 
 func (m modStreamSchedule) ID() string { return m.id }
@@ -48,18 +49,76 @@ func (m *modStreamSchedule) Initialize(args modules.ModuleInitArgs) error {
 		"twitch_client_id",
 		"twitch_client_secret",
 	); err != nil {
-		return errors.Wrap(err, "validating attributes")
+		return fmt.Errorf("validating attributes: %w", err)
 	}
 
 	// @attr cron optional string "*/10 * * * *" When to execute the schedule transfer
-	if _, err := args.Crontab.AddFunc(m.attrs.MustString("cron", helpers.Ptr("*/10 * * * *")), m.cronUpdateSchedule); err != nil {
-		return errors.Wrap(err, "adding cron function")
+	if _, err := args.Crontab.AddFunc(m.attrs.MustString("cron", new("*/10 * * * *")), m.cronUpdateSchedule); err != nil {
+		return fmt.Errorf("adding cron function: %w", err)
 	}
 
 	return nil
 }
 
 func (modStreamSchedule) Setup() error { return nil }
+
+func (m modStreamSchedule) assembleEmbed(data *twitch.StreamSchedule) *discordgo.MessageEmbed {
+	msgEmbed := &discordgo.MessageEmbed{
+		// @attr embed_color optional int64 "0x2ECC71" Integer / HEX representation of the color for the embed
+		Color: int(m.attrs.MustInt64("embed_color", helpers.StreamScheduleDefaultColor)),
+		// @attr embed_description optional string "" Description for the embed block
+		Description: strings.TrimSpace(m.attrs.MustString("embed_description", new(""))),
+		Fields:      nil,
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Title:       m.attrs.MustString("embed_title", nil),
+		Type:        discordgo.EmbedTypeRich,
+	}
+
+	if m.attrs.MustString("embed_thumbnail_url", new("")) != "" {
+		msgEmbed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+			// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
+			URL: m.attrs.MustString("embed_thumbnail_url", new("")),
+			// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
+			Width: int(m.attrs.MustInt64("embed_thumbnail_width", new(int64(0)))),
+			// @attr embed_thumbnail_height optional int64 "" Height of the thumbnail
+			Height: int(m.attrs.MustInt64("embed_thumbnail_height", new(int64(0)))),
+		}
+	}
+
+	for _, seg := range data.Data.Segments {
+		title := seg.Title
+		switch {
+		case seg.StartTime == nil || seg.CanceledUntil != nil:
+			// No start-time: We skip this entry
+			continue
+
+		case seg.Category != nil && seg.Title == "":
+			// No title but category set: use category as title
+			title = seg.Category.Name
+
+		case seg.Category != nil && !strings.Contains(seg.Title, seg.Category.Name):
+			// Title and category set but category not part of title: Add it in braces
+			title = fmt.Sprintf("%s (%s)", seg.Title, seg.Category.Name)
+
+		case seg.Category == nil && seg.Title == "":
+			// Unnamed stream without category: don't display empty field
+			continue
+		}
+
+		msgEmbed.Fields = append(msgEmbed.Fields, &discordgo.MessageEmbedField{
+			Name:   m.formatTime(*seg.StartTime),
+			Value:  strings.TrimSpace(title),
+			Inline: false,
+		})
+
+		// @attr schedule_entries optional int64 "5" How many schedule entries to add to the embed as fields
+		if len(msgEmbed.Fields) == int(m.attrs.MustInt64("schedule_entries", helpers.DefaultStreamScheduleEntries)) {
+			break
+		}
+	}
+
+	return msgEmbed
+}
 
 func (m modStreamSchedule) cronUpdateSchedule() {
 	t := twitch.New(
@@ -75,7 +134,7 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 		// @attr twitch_channel_id required string "" ID (not name) of the channel to fetch the schedule from
 		m.attrs.MustString("twitch_channel_id", nil),
 		// @attr schedule_past_time optional duration "15m" How long in the past should the schedule contain an entry
-		helpers.Ptr(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", helpers.DefaultStreamSchedulePastTime))),
+		new(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", helpers.DefaultStreamSchedulePastTime))),
 	)
 	if err != nil {
 		logrus.WithError(err).Error("Unable to fetch stream schedule")
@@ -87,13 +146,13 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 
 	var msgEmbed *discordgo.MessageEmbed
 	// @attr embed_title optional string "" Title of the embed (embed will not be added when title is missing)
-	if m.attrs.MustString("embed_title", helpers.Ptr("")) != "" {
+	if m.attrs.MustString("embed_title", new("")) != "" {
 		msgEmbed = m.assembleEmbed(data)
 	}
 
 	var contentString string
 	// @attr content optional string "" Message content to post above the embed - Allows Go templating, make sure to proper escape the template strings. See [here](https://github.com/Luzifer/discord-community/blob/5f004fdab066f16580f41076a4e6d8668fe743c9/twitch.go#L53-L71) for available data object.
-	if m.attrs.MustString("content", helpers.Ptr("")) != "" {
+	if m.attrs.MustString("content", new("")) != "" {
 		if contentString, err = m.executeContentTemplate(data); err != nil {
 			logrus.WithError(err).Error("executing stream schedule template")
 			return
@@ -107,8 +166,11 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 			return nil
 		}
 
-		managedMsg, err = m.discord.ChannelMessage(channelID, mid)
-		return errors.Wrap(err, "fetching managed message")
+		if managedMsg, err = m.discord.ChannelMessage(channelID, mid); err != nil {
+			return fmt.Errorf("fetching managed message: %w", err)
+		}
+
+		return nil
 	}); err != nil {
 		logrus.WithError(err).Error("Unable to fetch managed message for stream schedule")
 		return
@@ -151,83 +213,27 @@ func (m modStreamSchedule) cronUpdateSchedule() {
 	logrus.Info("Updated Stream Schedule")
 }
 
-func (m modStreamSchedule) assembleEmbed(data *twitch.StreamSchedule) *discordgo.MessageEmbed {
-	msgEmbed := &discordgo.MessageEmbed{
-		// @attr embed_color optional int64 "0x2ECC71" Integer / HEX representation of the color for the embed
-		Color: int(m.attrs.MustInt64("embed_color", helpers.StreamScheduleDefaultColor)),
-		// @attr embed_description optional string "" Description for the embed block
-		Description: strings.TrimSpace(m.attrs.MustString("embed_description", helpers.Ptr(""))),
-		Fields:      []*discordgo.MessageEmbedField{},
-		Timestamp:   time.Now().Format(time.RFC3339),
-		Title:       m.attrs.MustString("embed_title", nil),
-		Type:        discordgo.EmbedTypeRich,
-	}
-
-	if m.attrs.MustString("embed_thumbnail_url", helpers.Ptr("")) != "" {
-		msgEmbed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-			// @attr embed_thumbnail_url optional string "" Publically hosted image URL to use as thumbnail
-			URL: m.attrs.MustString("embed_thumbnail_url", helpers.Ptr("")),
-			// @attr embed_thumbnail_width optional int64 "" Width of the thumbnail
-			Width: int(m.attrs.MustInt64("embed_thumbnail_width", helpers.Ptr(int64(0)))),
-			// @attr embed_thumbnail_height optional int64 "" Height of the thumbnail
-			Height: int(m.attrs.MustInt64("embed_thumbnail_height", helpers.Ptr(int64(0)))),
-		}
-	}
-
-	for _, seg := range data.Data.Segments {
-		title := seg.Title
-		switch {
-		case seg.StartTime == nil || seg.CanceledUntil != nil:
-			// No start-time: We skip this entry
-			continue
-
-		case seg.Category != nil && seg.Title == "":
-			// No title but category set: use category as title
-			title = seg.Category.Name
-
-		case seg.Category != nil && !strings.Contains(seg.Title, seg.Category.Name):
-			// Title and category set but category not part of title: Add it in braces
-			title = fmt.Sprintf("%s (%s)", seg.Title, seg.Category.Name)
-
-		case seg.Category == nil && seg.Title == "":
-			// Unnamed stream without category: don't display empty field
-			continue
-		}
-
-		msgEmbed.Fields = append(msgEmbed.Fields, &discordgo.MessageEmbedField{
-			Name:   m.formatTime(*seg.StartTime),
-			Value:  strings.TrimSpace(title),
-			Inline: false,
-		})
-
-		// @attr schedule_entries optional int64 "5" How many schedule entries to add to the embed as fields
-		if len(msgEmbed.Fields) == int(m.attrs.MustInt64("schedule_entries", helpers.DefaultStreamScheduleEntries)) {
-			break
-		}
-	}
-
-	return msgEmbed
-}
-
 func (m modStreamSchedule) executeContentTemplate(data *twitch.StreamSchedule) (string, error) {
 	fns := sprig.FuncMap()
 	fns["formatTime"] = m.formatTime
 
 	tpl, err := template.New("streamschedule").
 		Funcs(fns).
-		Parse(m.attrs.MustString("content", helpers.Ptr("")))
+		Parse(m.attrs.MustString("content", new("")))
 	if err != nil {
-		return "", errors.Wrap(err, "parsing template")
+		return "", fmt.Errorf("parsing template: %w", err)
 	}
 
 	buf := new(bytes.Buffer)
-	err = tpl.Execute(buf, data.Data)
-	return buf.String(), errors.Wrap(err, "executing template")
+	if err = tpl.Execute(buf, data.Data); err != nil {
+		return "", fmt.Errorf("executing template: %w", err)
+	}
+	return buf.String(), nil
 }
 
 func (m modStreamSchedule) formatTime(t time.Time) string {
 	// @attr timezone optional string "UTC" Timezone to display the times in (e.g. `Europe/Berlin`)
-	tz, err := time.LoadLocation(m.attrs.MustString("timezone", helpers.Ptr("UTC")))
+	tz, err := time.LoadLocation(m.attrs.MustString("timezone", new("UTC")))
 	if err != nil {
 		logrus.WithError(err).Fatal("Unable to load timezone")
 	}
@@ -235,8 +241,8 @@ func (m modStreamSchedule) formatTime(t time.Time) string {
 	return localeStrftime(
 		t.In(tz),
 		// @attr time_format optional string "%b %d, %Y %I:%M %p" Time format in [limited strftime format](https://github.com/Luzifer/discord-community/blob/master/strftime.go) to use (e.g. `%a. %d.%m. %H:%M Uhr`)
-		m.attrs.MustString("time_format", helpers.Ptr("%b %d, %Y %I:%M %p")),
+		m.attrs.MustString("time_format", new("%b %d, %Y %I:%M %p")),
 		// @attr locale optional string "en_US" Locale to translate the date to ([supported locales](https://github.com/goodsign/monday/blob/24c0b92f25dca51152defe82cefc7f7fc1c92009/locale.go#L9-L49))
-		m.attrs.MustString("locale", helpers.Ptr("en_US")),
+		m.attrs.MustString("locale", new("en_US")),
 	)
 }

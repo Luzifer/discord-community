@@ -1,3 +1,4 @@
+// Package presence implements a module for updating the bot presence from Twitch schedules.
 package presence
 
 import (
@@ -6,13 +7,13 @@ import (
 	"math"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
+
 	"github.com/Luzifer/discord-community/pkg/attributestore"
 	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
 	"github.com/Luzifer/discord-community/pkg/twitch"
-	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -24,14 +25,14 @@ const (
 	presenceTimeDay = 24 * time.Hour
 )
 
-func init() {
-	modules.RegisterModule("presence", func() modules.Module { return &modPresence{} })
-}
-
 type modPresence struct {
 	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
+}
+
+func init() {
+	modules.RegisterModule("presence", func() modules.Module { return &modPresence{} })
 }
 
 func (m modPresence) ID() string { return m.id }
@@ -47,12 +48,12 @@ func (m *modPresence) Initialize(args modules.ModuleInitArgs) error {
 		"twitch_client_id",
 		"twitch_client_secret",
 	); err != nil {
-		return errors.Wrap(err, "validating attributes")
+		return fmt.Errorf("validating attributes: %w", err)
 	}
 
 	// @attr cron optional string "* * * * *" When to execute the module
-	if _, err := args.Crontab.AddFunc(m.attrs.MustString("cron", helpers.Ptr("* * * * *")), m.cronUpdatePresence); err != nil {
-		return errors.Wrap(err, "adding cron function")
+	if _, err := args.Crontab.AddFunc(m.attrs.MustString("cron", new("* * * * *")), m.cronUpdatePresence); err != nil {
+		return fmt.Errorf("adding cron function: %w", err)
 	}
 
 	return nil
@@ -76,7 +77,7 @@ func (m modPresence) cronUpdatePresence() {
 		// @attr twitch_channel_id required string "" ID (not name) of the channel to fetch the schedule from
 		m.attrs.MustString("twitch_channel_id", nil),
 		// @attr schedule_past_time optional duration "15m" How long in the past should the schedule contain an entry
-		helpers.Ptr(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", helpers.DefaultStreamSchedulePastTime))),
+		new(time.Now().Add(-m.attrs.MustDuration("schedule_past_time", helpers.DefaultStreamSchedulePastTime))),
 	)
 	if err != nil {
 		logrus.WithError(err).Error("Unable to fetch stream schedule")

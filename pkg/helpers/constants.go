@@ -1,3 +1,4 @@
+// Package helpers contains shared helper functions and default values.
 package helpers
 
 import (
@@ -6,11 +7,11 @@ import (
 
 var (
 	// DefaultStreamScheduleEntries defines how many entries to show by default
-	DefaultStreamScheduleEntries = Ptr(int64(5)) //nolint:mnd // This is already the "constant"
+	DefaultStreamScheduleEntries = new(int64(5))
 
 	// DefaultStreamSchedulePastTime defines how long after the stream to keep it
-	DefaultStreamSchedulePastTime = Ptr(15 * time.Minute) //nolint:mnd // This is already the "constant"
+	DefaultStreamSchedulePastTime = new(15 * time.Minute)
 
 	// StreamScheduleDefaultColor defines the default color for the schedule
-	StreamScheduleDefaultColor = Ptr(int64(0x2ECC71)) //nolint:mnd // This is already the "constant"
+	StreamScheduleDefaultColor = new(int64(0x2ECC71))
 )

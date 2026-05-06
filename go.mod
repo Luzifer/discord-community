@@ -1,6 +1,6 @@
 module github.com/Luzifer/discord-community
 
-go 1.25.7
+go 1.26
 
 toolchain go1.26.2
 
@@ -13,7 +13,6 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/goodsign/monday v1.0.2
-	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.4
 	go.yaml.in/yaml/v3 v3.0.4
@@ -44,6 +43,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect

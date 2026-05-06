@@ -1,19 +1,21 @@
+// Package liverole implements a module for assigning Discord roles to live streamers.
 package liverole
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/url"
 	"slices"
 	"strings"
 
+	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
+
 	"github.com/Luzifer/discord-community/pkg/attributestore"
 	"github.com/Luzifer/discord-community/pkg/config"
-	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
 	"github.com/Luzifer/discord-community/pkg/twitch"
-	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -21,15 +23,15 @@ import (
  * @module_desc Adds live-role to certain group of users if they are streaming on Twitch
  */
 
-func init() {
-	modules.RegisterModule("liverole", func() modules.Module { return &modLiveRole{} })
-}
-
 type modLiveRole struct {
 	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
 	config  *config.File
+}
+
+func init() {
+	modules.RegisterModule("liverole", func() modules.Module { return &modLiveRole{} })
 }
 
 func (m modLiveRole) ID() string { return m.id }
@@ -45,7 +47,7 @@ func (m *modLiveRole) Initialize(args modules.ModuleInitArgs) error {
 		"twitch_client_id",
 		"twitch_client_secret",
 	); err != nil {
-		return errors.Wrap(err, "validating attributes")
+		return fmt.Errorf("validating attributes: %w", err)
 	}
 
 	m.discord.AddHandler(m.handlePresenceUpdate)
@@ -55,7 +57,7 @@ func (m *modLiveRole) Initialize(args modules.ModuleInitArgs) error {
 
 func (modLiveRole) Setup() error { return nil }
 
-func (m modLiveRole) addLiveStreamerRole(guildID, userID string, presentRoles []string) error {
+func (m modLiveRole) addLiveStreamerRole(guildID, userID string, presentRoles []string) (err error) {
 	// @attr role_streamers_live required string "" Role ID to assign to live streamers (make sure the bot [can assign](https://support.discord.com/hc/en-us/articles/214836687-Role-Management-101) this role)
 	roleID := m.attrs.MustString("role_streamers_live", nil)
 	if roleID == "" {
@@ -66,10 +68,11 @@ func (m modLiveRole) addLiveStreamerRole(guildID, userID string, presentRoles []
 		return nil
 	}
 
-	return errors.Wrap(
-		m.discord.GuildMemberRoleAdd(guildID, userID, roleID),
-		"adding role",
-	)
+	if err = m.discord.GuildMemberRoleAdd(guildID, userID, roleID); err != nil {
+		return fmt.Errorf("adding role: %w", err)
+	}
+
+	return nil
 }
 
 func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.PresenceUpdate) {
@@ -94,7 +97,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	logger = logger.WithField("name", member.User.String())
 
 	// @attr role_streamers optional string "" Only take members with this role ID into account
-	roleStreamer := m.attrs.MustString("role_streamers", helpers.Ptr(""))
+	roleStreamer := m.attrs.MustString("role_streamers", new(""))
 	if roleStreamer != "" && !slices.Contains(member.Roles, roleStreamer) {
 		// User is not part of the streamer role
 		return
@@ -163,7 +166,7 @@ func (m modLiveRole) handlePresenceUpdate(d *discordgo.Session, p *discordgo.Pre
 	}
 }
 
-func (m modLiveRole) removeLiveStreamerRole(guildID, userID string, presentRoles []string) error {
+func (m modLiveRole) removeLiveStreamerRole(guildID, userID string, presentRoles []string) (err error) {
 	roleID := m.attrs.MustString("role_streamers_live", nil)
 	if roleID == "" {
 		return errors.New("empty live-role-id")
@@ -173,8 +176,9 @@ func (m modLiveRole) removeLiveStreamerRole(guildID, userID string, presentRoles
 		return nil
 	}
 
-	return errors.Wrap(
-		m.discord.GuildMemberRoleRemove(guildID, userID, roleID),
-		"adding role",
-	)
+	if err = m.discord.GuildMemberRoleRemove(guildID, userID, roleID); err != nil {
+		return fmt.Errorf("adding role: %w", err)
+	}
+
+	return nil
 }

@@ -1,17 +1,17 @@
+// Package clearchannel implements a module for deleting old Discord messages.
 package clearchannel
 
 import (
+	"fmt"
 	"slices"
 	"sort"
 	"strconv"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/discord-community/pkg/attributestore"
-	"github.com/Luzifer/discord-community/pkg/helpers"
 	"github.com/Luzifer/discord-community/pkg/modules"
 )
 
@@ -24,14 +24,14 @@ const (
 	clearChannelNumberOfMessagesToLoad = 100
 )
 
-func init() {
-	modules.RegisterModule("clearchannel", func() modules.Module { return &modClearChannel{} })
-}
-
 type modClearChannel struct {
 	attrs   attributestore.ModuleAttributeStore
 	discord *discordgo.Session
 	id      string
+}
+
+func init() {
+	modules.RegisterModule("clearchannel", func() modules.Module { return &modClearChannel{} })
 }
 
 func (m modClearChannel) ID() string { return m.id }
@@ -45,12 +45,12 @@ func (m *modClearChannel) Initialize(args modules.ModuleInitArgs) error {
 		"discord_channel_id",
 		"retention",
 	); err != nil {
-		return errors.Wrap(err, "validating attributes")
+		return fmt.Errorf("validating attributes: %w", err)
 	}
 
 	// @attr cron optional string "0 * * * *" When to execute the cleaner
-	if _, err := args.Crontab.AddFunc(args.Attrs.MustString("cron", helpers.Ptr("0 * * * *")), m.cronClearChannel); err != nil {
-		return errors.Wrap(err, "adding cron function")
+	if _, err := args.Crontab.AddFunc(args.Attrs.MustString("cron", new("0 * * * *")), m.cronClearChannel); err != nil {
+		return fmt.Errorf("adding cron function: %w", err)
 	}
 
 	return nil
@@ -99,8 +99,8 @@ func (m modClearChannel) cronClearChannel() {
 		}
 
 		sort.Slice(msgs, func(i, j int) bool {
-			iu, _ := strconv.ParseUint(msgs[i].ID, 10, 64) //nolint: gomnd // These make no sense to define as constants
-			ju, _ := strconv.ParseUint(msgs[j].ID, 10, 64) //nolint: gomnd // These make no sense to define as constants
+			iu, _ := strconv.ParseUint(msgs[i].ID, 10, 64)
+			ju, _ := strconv.ParseUint(msgs[j].ID, 10, 64)
 			return iu < ju
 		})
 
