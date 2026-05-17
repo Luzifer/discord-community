@@ -1,13 +1,13 @@
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
 dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
-github.com/Luzifer/go_helpers/accesslogger v0.1.1 h1:z9tg/Sd508g5OR1rG2kmzvM1zgg1JGyMYWuWWCvkPyA=
-github.com/Luzifer/go_helpers/accesslogger v0.1.1/go.mod h1:x4K138iYEIhpVAjoxuXyTTzKiZLJEu4Lu8DX+zeDUzw=
+github.com/Luzifer/go_helpers/accesslogger v0.1.2 h1:iDzSeFPrRIPmvWTERBkJuXIn2I9d64AVWT99Y8ZLJ28=
+github.com/Luzifer/go_helpers/accesslogger v0.1.2/go.mod h1:x4K138iYEIhpVAjoxuXyTTzKiZLJEu4Lu8DX+zeDUzw=
 github.com/Luzifer/go_helpers/backoff v0.5.2 h1:nBumiZ42jGL00TEMnZhQMNDL9qvD6qG+scC8mnTs6+4=
 github.com/Luzifer/go_helpers/backoff v0.5.2/go.mod h1:MGip8UhDkzYp8/3xQH4eUKwTKSkqnNnrrmoPWDVeDj4=
 github.com/Luzifer/go_helpers/env v0.5.2 h1:cFQclcqwgZkK6Ex+CXyMbR82a1vBY64epo9op/HbSws=
 github.com/Luzifer/go_helpers/env v0.5.2/go.mod h1:tG9KQq9zcineRgsCbBReJVm6jg3DARwp0Q9WpuBkV7I=
-github.com/Luzifer/go_helpers/http v0.12.4 h1:x61Njbbpugq+fHZbloc5g5LtQ6pbOrIPeWdOqR1AnHA=
-github.com/Luzifer/go_helpers/http v0.12.4/go.mod h1:+oUm+JPQRjjockMjbKHqFNWj6dwY8iGnlYNUHE+NpdU=
+github.com/Luzifer/go_helpers/http v0.12.5 h1:p4ZASYiiI6z5eTWzdW/5vq7502zI4psJl7Hv2XD2kaQ=
+github.com/Luzifer/go_helpers/http v0.12.5/go.mod h1:pydx7ol0KMRCRD3tth6DTLkjY/Lf+RByT48zgjbRmck=
 github.com/Luzifer/korvike/functions v1.0.3 h1:BDmnmA5LHlqqj4CnN80ICHNx8ROOleRoF07IviWJ0Wc=
 github.com/Luzifer/korvike/functions v1.0.3/go.mod h1:ZzEpPlwCHz1OcV+bqoy0ka3CEyg7UNOGYcpjMjg5N2U=
 github.com/Luzifer/rconfig/v2 v2.6.2 h1:Dx9WetHvyUx84P8D7WDr7OvsEsD0XT3t04DtCSqT95o=

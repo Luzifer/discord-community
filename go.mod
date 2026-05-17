@@ -7,7 +7,7 @@ toolchain go1.26.3
 require (
 	github.com/Luzifer/go_helpers/backoff v0.5.2
 	github.com/Luzifer/go_helpers/env v0.5.2
-	github.com/Luzifer/go_helpers/http v0.12.4
+	github.com/Luzifer/go_helpers/http v0.12.5
 	github.com/Luzifer/korvike/functions v1.0.3
 	github.com/Luzifer/rconfig/v2 v2.6.2
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -20,7 +20,7 @@ require (
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/Luzifer/go_helpers/accesslogger v0.1.1 // indirect
+	github.com/Luzifer/go_helpers/accesslogger v0.1.2 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
