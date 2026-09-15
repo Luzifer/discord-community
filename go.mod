@@ -5,9 +5,9 @@ go 1.26
 toolchain go1.27.1
 
 require (
-	github.com/Luzifer/go_helpers/backoff v0.5.2
-	github.com/Luzifer/go_helpers/env v0.5.2
-	github.com/Luzifer/go_helpers/http v0.12.5
+	github.com/Luzifer/go_helpers/backoff v0.5.4
+	github.com/Luzifer/go_helpers/env v0.5.4
+	github.com/Luzifer/go_helpers/http v0.12.10
 	github.com/Luzifer/korvike/functions v1.2.0
 	github.com/Luzifer/rconfig/v2 v2.6.2
 	github.com/Masterminds/sprig/v3 v3.3.0
