@@ -2,7 +2,7 @@ module github.com/Luzifer/discord-community
 
 go 1.26.0
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 require (
 	github.com/Luzifer/go_helpers/backoff v0.5.4
