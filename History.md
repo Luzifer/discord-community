@@ -1,3 +1,12 @@
+# 0.14.2 / 2026-10-17
+
+  * chore: update linter config; resolve linter issues; modernize code
+  * fix(deps): update module github.com/luzifer/go_helpers/* (#68)
+  * fix(deps): update module github.com/luzifer/korvike/functions to v1.2.1 (#70)
+  * fix(deps): update module github.com/luzifer/rconfig/v2 to v2.6.2 (#32)
+  * fix(deps): update module github.com/sirupsen/logrus to v1.10.2 (#65)
+  * fix(deps): update module go.yaml.in/yaml/v3 to v3.0.5 (#56)
+
 # 0.14.1 / 2026-02-20
 
   * fix(deps): update module github.com/luzifer/rconfig/v2 to v2.6.1
