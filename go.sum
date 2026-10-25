@@ -8,8 +8,8 @@ github.com/Luzifer/go_helpers/env v0.5.4 h1:m+ulGq2IR4BerGf0sbXZyZQXHZealKX75X5y
 github.com/Luzifer/go_helpers/env v0.5.4/go.mod h1:h8+r3gXYaTeiyIIitZvr/Iwo+Q96CH2z12PnEgkbd80=
 github.com/Luzifer/go_helpers/http v0.12.10 h1:ZTCNbnoi5UuBNHnqAzeEf13/yhXscI8mWCyLnsJi+6c=
 github.com/Luzifer/go_helpers/http v0.12.10/go.mod h1:0MPZqf5KKXbVPHA9zdtDG21SeCGSGXVmDWMQW1LDHUU=
-github.com/Luzifer/korvike/functions v1.2.1 h1:plMy6kym1sO6BlHsodQjNMSjsPOYUAL56LyWVWNe0Zw=
-github.com/Luzifer/korvike/functions v1.2.1/go.mod h1:iIg9LPvNF/6ZwIVnm0MCok2ZcprbTxlKc+ac/WSDgd8=
+github.com/Luzifer/korvike/functions v1.2.2 h1:Blxe9+DHdBqrLE8cCrX9BcO9I9T8ajufyCA6klW0oRI=
+github.com/Luzifer/korvike/functions v1.2.2/go.mod h1:EWU40ejGNsATi8PliTElMRYEpLdMYbQWTrAEiz2ERiE=
 github.com/Luzifer/rconfig/v2 v2.6.2 h1:Dx9WetHvyUx84P8D7WDr7OvsEsD0XT3t04DtCSqT95o=
 github.com/Luzifer/rconfig/v2 v2.6.2/go.mod h1:F8bKJYwzwQT0m0V0N6S8uS7tI6jm05ANCe3D0EHuX/w=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=
