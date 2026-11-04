@@ -6,8 +6,8 @@ github.com/Luzifer/go_helpers/backoff v0.5.4 h1:vNz34YuD7Wq4S5VUhc/mX1VKkB683fbG
 github.com/Luzifer/go_helpers/backoff v0.5.4/go.mod h1:zGh358gZSwcgFgBneYO8atPBmz7TKuPlZ36Z2kg1UoU=
 github.com/Luzifer/go_helpers/env v0.5.4 h1:m+ulGq2IR4BerGf0sbXZyZQXHZealKX75X5yfJXdYdY=
 github.com/Luzifer/go_helpers/env v0.5.4/go.mod h1:h8+r3gXYaTeiyIIitZvr/Iwo+Q96CH2z12PnEgkbd80=
-github.com/Luzifer/go_helpers/http v0.12.10 h1:ZTCNbnoi5UuBNHnqAzeEf13/yhXscI8mWCyLnsJi+6c=
-github.com/Luzifer/go_helpers/http v0.12.10/go.mod h1:0MPZqf5KKXbVPHA9zdtDG21SeCGSGXVmDWMQW1LDHUU=
+github.com/Luzifer/go_helpers/http v0.12.12 h1:ig3l+MgV50Y3joGPwtM9hy33hZjvxpmb3VVwUph8YU4=
+github.com/Luzifer/go_helpers/http v0.12.12/go.mod h1:DhpLPdAtXNMj5AHufmXi6zMZJ9QyGuG/EPdU5VqKL2g=
 github.com/Luzifer/korvike/functions v1.2.2 h1:Blxe9+DHdBqrLE8cCrX9BcO9I9T8ajufyCA6klW0oRI=
 github.com/Luzifer/korvike/functions v1.2.2/go.mod h1:EWU40ejGNsATi8PliTElMRYEpLdMYbQWTrAEiz2ERiE=
 github.com/Luzifer/rconfig/v2 v2.6.2 h1:Dx9WetHvyUx84P8D7WDr7OvsEsD0XT3t04DtCSqT95o=
