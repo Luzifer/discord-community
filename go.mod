@@ -9,7 +9,7 @@ require (
 	github.com/Luzifer/go_helpers/env v0.5.4
 	github.com/Luzifer/go_helpers/http v0.12.12
 	github.com/Luzifer/korvike/functions v1.2.2
-	github.com/Luzifer/rconfig/v2 v2.6.2
+	github.com/Luzifer/rconfig/v2 v2.6.3
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/goodsign/monday v1.0.2
